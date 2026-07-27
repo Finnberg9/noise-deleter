@@ -35,20 +35,6 @@ Complex broadband cancellation — future work. Requires automatic frequency est
 
 Validation testing: 10 bench tests covering amplifier communication, channel mapping, I²S microphone operation, TDM multi-speaker output, stereo mic addressing, full audio-pipeline loopback, PCB power rails, FxLMS convergence, and divergence recovery — all passed; the full 15 dB objective was partially met.
 
-Key findings:
-
-Secondary-path phase accuracy is critical — errors beyond ~90° cause the adaptive filter to diverge.
-I²S constraints limited the design to one reference and one error microphone.
-The system autonomously recovered from instability via divergence detection.
-Acoustic reflections and coupling were the primary performance ceiling.
-Future improvements
-Automatic frequency estimation (removing the fixed 2 kHz assumption)
-Simultaneous multi-tone cancellation via concurrent adaptive filters
-TDM-capable microphones for additional spatial error sensors
-On-device secondary-path measurement to eliminate calibration error
-Adaptive beam steering to follow the listener in real time
-Project website
-This folder is a static website presenting the project (team, background, design, results, photo gallery, interactive 360° model viewers, and the full final report). Open index.html in a browser, or host it free on GitHub Pages — see DEPLOY.md. The complete technical documentation is in final-report.pdf.
 Team
 Member
 Role
