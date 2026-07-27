@@ -150,28 +150,24 @@
       letter-spacing:.08em; text-transform:uppercase;
       background:none; border:none; cursor:pointer;
       color:var(--t2); position:relative;
-      transition:color .25s, transform .3s var(--ease);
+      padding:6px 12px; border-radius:999px; margin:-6px -12px;
+      transition:color .2s, transform .3s var(--ease), background-color .2s, font-weight .1s;
     }
     .nav-items button:hover, #sndBtn:hover { color:var(--t); }
     nav.inv .nav-items button, nav.inv #sndBtn { color:var(--ti3); }
     nav.inv .nav-items button:hover, nav.inv #sndBtn:hover { color:var(--ti); }
 
-    /* Active-section indicator: the current tab nudges down and
-       grows a small rounded bulge beneath it, poking out of the
-       nav bar. Same treatment fires instantly on click. */
-    .nav-items button.active { color:var(--t); transform:translateY(2px); }
-    nav.inv .nav-items button.active { color:var(--ti); }
-    .nav-items button.active::after {
-      content:''; position:absolute; left:50%; bottom:-15px; transform:translateX(-50%);
-      width:26px; height:14px; border-radius:0 0 14px 14px;
-      background:rgba(255,255,255,0.55);
-      backdrop-filter:blur(20px) saturate(1.8); -webkit-backdrop-filter:blur(20px) saturate(1.8);
-      box-shadow:inset 0 1px 0 rgba(255,255,255,0.8), 0 6px 14px rgba(0,0,0,0.14);
-      pointer-events:none;
+    /* Active-section indicator: unmistakable at a glance — bold
+       weight, full-contrast color, and a solid pill background,
+       not just a subtle color shift. Fires on scroll AND on click. */
+    .nav-items button.active {
+      color:var(--t); font-weight:700;
+      background-color:rgba(0,0,0,0.08);
+      transform:translateY(1px);
     }
-    nav.inv .nav-items button.active::after {
-      background:rgba(10,10,10,0.55);
-      box-shadow:inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 14px rgba(0,0,0,0.4);
+    nav.inv .nav-items button.active {
+      color:var(--ti);
+      background-color:rgba(255,255,255,0.16);
     }
     #sndBtn { border:1px solid var(--ln); border-radius:20px; padding:5px 14px; }
     nav.inv #sndBtn { border-color:var(--lni); }
@@ -258,10 +254,13 @@
     ═════════════════════════════════════════════════ */
     .s-intro { width:120vw; align-items:center; }
     .intro-in { display:flex; width:100%; padding:0 8vw; gap:6vw; align-items:center; }
-    .intro-l { flex:1.1; }
+    .intro-l { flex:1.4; }
     .intro-l img {
-      width:100%; max-height:74vh; object-fit:contain;
-      filter:drop-shadow(0 24px 48px rgba(0,0,0,0.12));
+      /* device-hero.png has its studio backdrop removed (transparent
+         PNG) — the drop-shadow now traces the object's own silhouette
+         instead of a rectangular box, which reads far more natural. */
+      width:100%; max-height:84vh; object-fit:contain;
+      filter:drop-shadow(0 28px 56px rgba(0,0,0,0.16));
     }
     .intro-r { flex:1; }
     .intro-r .display { font-size:clamp(2.2rem,3.6vw,3.6rem); margin-bottom:28px; }
@@ -1190,8 +1189,12 @@ function heroAmp(){
   return clamp(1 - cx/flattenEnd, 0, 1);
 }
 function heroFade(){
-  const exitStart = heroW - vpW;
-  return clamp(1 - (cx - exitStart)/(vpW*0.55), 0, 1);
+  /* Fade out well before the hero section visually ends and the
+     next section's content starts appearing on screen — the flat
+     line has nothing left to say once amplitude has bottomed out,
+     so it shouldn't still be visible once new content is on screen. */
+  const exitStart = heroW * 0.60;
+  return clamp(1 - (cx - exitStart)/(vpW*0.16), 0, 1);
 }
 function drawWave(t){
   const dt = lastT ? Math.min((t-lastT)/1000, 0.05) : 0.016;
@@ -1283,7 +1286,16 @@ navBtns.forEach(btn=>{
       const secs=[...document.querySelectorAll('[data-sec]')];
       target = secs[parseInt(btn.dataset.g)];
     }
-    if(target){ const r=target.getBoundingClientRect(); tx=clamp(cx+r.left,0,maxScroll); }
+    if(target){
+      const r=target.getBoundingClientRect();
+      /* Landing flush at the target's measured left edge overshoots:
+         children inside with parallax (e.g. #resTitle at spd 1.04)
+         lead ahead of their container and drift further left once
+         the section settles into place, clipping their first
+         letters. A fixed viewport-width margin leaves slack for
+         that settle-in drift on any target, not just this one. */
+      tx = clamp(cx + r.left - vpW*0.05, 0, maxScroll);
+    }
     navBtns.forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
   });
