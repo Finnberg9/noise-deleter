@@ -488,20 +488,23 @@
     /* ═════════════════════════════════════════════════
        7. ACKNOWLEDGMENTS  (130vw)
     ═════════════════════════════════════════════════ */
+    /* 100vw, not 130vw — the grid's columns fill this section's
+       own width, so at 130vw the third column always sat past the
+       edge of a single 100vw-wide viewport and looked clipped. */
     .s-ack {
-      width:130vw;
+      width:100vw;
       display:flex; flex-direction:column; justify-content:center;
-      padding:72px 6vw;
+      padding:64px 5vw;
     }
-    .ack-head { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:36px; position:relative; z-index:2; }
-    .ack-head > p { font-size:.84rem; color:var(--t2); max-width:260px; line-height:1.7; font-weight:300; text-align:right; }
+    .ack-head { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:28px; position:relative; z-index:2; }
+    .ack-head > p { font-size:.8rem; color:var(--t2); max-width:240px; line-height:1.65; font-weight:300; text-align:right; }
     .ack-grid {
       display:grid; grid-template-columns:repeat(3,1fr);
-      gap:14px; position:relative; z-index:2;
+      gap:12px; position:relative; z-index:2;
     }
     .ack-item {
       background:var(--w1); border:1px solid var(--ln); border-radius:10px;
-      padding:18px 20px;
+      padding:15px 17px;
       transition:transform .35s var(--ease), box-shadow .35s var(--ease), background .35s;
     }
     .ack-for { font-size:.62rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--t3); margin-bottom:6px; }
@@ -1187,13 +1190,7 @@ function setToneLevel(amp){
    proportional to its frequency. */
 let wavePhase = 0, lastCx = 0, lastT = 0;
 function heroAmp(){
-  /* The title sits at 206vw (fixed, see .wave-title) and first
-     enters the viewport once cx reaches roughly vpW-away from that
-     (~106vw on a 100vw-wide viewport). Flattening at 20% of the
-     420vw hero (84vw) finishes well before that point, so the wave
-     — and the tone — are silent by the time the title is on screen,
-     not still mid-decay. */
-  const flattenEnd = heroW * 0.20;
+  const flattenEnd = heroW * 0.46;
   return clamp(1 - cx/flattenEnd, 0, 1);
 }
 function heroFade(){
@@ -1314,7 +1311,19 @@ document.getElementById('homeBtn').addEventListener('click',()=>{
   navBtns.forEach(b=>b.classList.remove('active'));
 });
 
-/* ── Iframe caps ──────────────────────────────────── */
+/* ── Iframe caps ──────────────────────────────────────
+   Every cap forwards wheel to the horizontal engine so you can
+   always scroll the page from anywhere over a viewer or the PDF.
+
+   The 360° viewers (cap1/cap2) additionally relay real drag
+   events INTO the iframe's own document so the rotate-drag still
+   works — the cap itself is NEVER disabled to "let the drag
+   through" (that was the bug: once the rotate-drag ended with the
+   mouse released over the iframe, the mouseup fired inside that
+   iframe's own document and never reached this page, so the cap
+   stayed permanently non-interactive and wheel-scroll broke for
+   good). Relaying keeps the cap on top and interactive at all
+   times, so a genuine mouseup always lands on OUR page. ───────── */
 const caps=[document.getElementById('cap1'),document.getElementById('cap2'),repCap].filter(Boolean);
 caps.forEach(cap=>{
   cap.addEventListener('wheel',e=>{
@@ -1322,9 +1331,70 @@ caps.forEach(cap=>{
     const delta=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;
     tx=clamp(tx+delta*MULT,0,maxScroll);
   },{passive:false});
-  cap.addEventListener('mousedown',()=>{cap.style.pointerEvents='none';});
 });
-window.addEventListener('mouseup',()=>caps.forEach(c=>c.style.pointerEvents='auto'));
+
+function relayDragIntoIframe(cap, iframeEl){
+  let dragging=false;
+  function relayTarget(){
+    let doc;
+    try{ doc=iframeEl.contentDocument; }catch(e){ return null; }
+    if(!doc) return null;
+    return doc.getElementById('viewer') || doc.body;
+  }
+  function relay(type, clientX, clientY, buttons){
+    const el=relayTarget();
+    if(!el) return;
+    const r=iframeEl.getBoundingClientRect();
+    el.dispatchEvent(new MouseEvent(type,{
+      bubbles:true, cancelable:true, view:el.ownerDocument.defaultView,
+      clientX:clientX-r.left, clientY:clientY-r.top, button:0, buttons
+    }));
+  }
+  cap.addEventListener('mousedown', e=>{
+    dragging=true;
+    relay('mousedown', e.clientX, e.clientY, 1);
+  });
+  window.addEventListener('mousemove', e=>{
+    if(dragging) relay('mousemove', e.clientX, e.clientY, 1);
+  });
+  window.addEventListener('mouseup', e=>{
+    if(dragging){ dragging=false; relay('mouseup', e.clientX, e.clientY, 0); }
+  });
+  cap.addEventListener('touchstart', e=>{
+    const t=e.touches[0]; if(!t) return;
+    dragging=true;
+    relay('mousedown', t.clientX, t.clientY, 1);
+  }, {passive:true});
+  window.addEventListener('touchmove', e=>{
+    const t=e.touches[0]; if(!dragging||!t) return;
+    relay('mousemove', t.clientX, t.clientY, 1);
+  }, {passive:true});
+  window.addEventListener('touchend', e=>{
+    if(!dragging) return;
+    dragging=false;
+    const t=e.changedTouches[0];
+    relay('mouseup', t?t.clientX:0, t?t.clientY:0, 0);
+  });
+}
+const cap1El=document.getElementById('cap1'), cap2El=document.getElementById('cap2');
+const iframe1=vw1&&vw1.querySelector('iframe'), iframe2=vw2&&vw2.querySelector('iframe');
+if(cap1El && iframe1) relayDragIntoIframe(cap1El, iframe1);
+if(cap2El && iframe2) relayDragIntoIframe(cap2El, iframe2);
+
+/* The PDF cap has no drag-relay (native PDF interaction doesn't
+   need it) — it just steps aside on mousedown so the PDF viewer
+   is directly clickable, same safety-net logic as above so it
+   can never get stuck non-interactive either. */
+if(repCap){
+  let pdfDown=false;
+  repCap.addEventListener('mousedown',()=>{ pdfDown=true; repCap.style.pointerEvents='none'; });
+  window.addEventListener('mousemove', e=>{
+    if(pdfDown && e.buttons===0){ pdfDown=false; repCap.style.pointerEvents='auto'; }
+  });
+  window.addEventListener('mouseup', ()=>{
+    if(pdfDown){ pdfDown=false; repCap.style.pointerEvents='auto'; }
+  });
+}
 
 /* ── Viewer rise/sink ─────────────────────────────── */
 function updateViewers(){
