@@ -2,14 +2,14 @@ Noise Deleter
 ECE 499 Capstone — Group 17 — University of Victoria — 2026
 
 The Noise Deleter is an adaptive active noise cancellation (ANC) system that suppresses harmful noise at a defined listening position in open air. Instead of headphones or passive barriers, it uses an eight-driver phased speaker array to steer a beam of destructive interference at the listener, adapting in real time with the FxLMS algorithm on fully custom hardware.
-Motivation
-Noise pollution in professional and care settings degrades quality of life for people with sensory processing conditions, and sustained exposure on construction and industrial sites causes irreversible hearing damage. Existing solutions leave a gap: passive barriers fail at low frequencies, consumer ANC headphones protect only one wearer, and laboratory spatial-ANC systems demand high channel counts and infrastructure. The Noise Deleter targets that middle ground — self-contained, built from commodity hardware, and under 10 W — in line with EGBC Code of Ethics Guideline 1: holding paramount the safety, health, and welfare of the public and workplace.
-How it works
+Motivation:
+Noise pollution in professional and care settings degrades quality of life for people with sensory processing conditions, and sustained exposure on construction and industrial sites causes irreversible hearing damage. Existing solutions leave a gap: passive barriers fail at low frequencies, consumer ANC headphones protect only one wearer, and laboratory spatial-ANC systems demand high channel counts and infrastructure. The Noise Deleter targets that middle ground — self-contained, built from commodity hardware, and under 10 W
+How it works:
 A reference microphone near the disturbance source measures the incoming noise.
 The controller generates an anti-noise waveform (equal amplitude, opposite phase) and drives the eight-speaker array as a phased beam aimed at the listening position.
 An error microphone at the listening position measures the residual sound.
 The FxLMS algorithm updates one complex weight per speaker (8 total) every sample at 48 kHz, scaled by the measured secondary path, continuously driving the residual toward zero. A divergence detector mutes and resets the system if adaptation goes unstable.
-System design
+System design:
 Subsystem
 Details
 Speaker array
@@ -35,20 +35,6 @@ Complex broadband cancellation — future work. Requires automatic frequency est
 
 Validation testing: 10 bench tests covering amplifier communication, channel mapping, I²S microphone operation, TDM multi-speaker output, stereo mic addressing, full audio-pipeline loopback, PCB power rails, FxLMS convergence, and divergence recovery — all passed; the full 15 dB objective was partially met.
 
-Key findings:
-
-Secondary-path phase accuracy is critical — errors beyond ~90° cause the adaptive filter to diverge.
-I²S constraints limited the design to one reference and one error microphone.
-The system autonomously recovered from instability via divergence detection.
-Acoustic reflections and coupling were the primary performance ceiling.
-Future improvements
-Automatic frequency estimation (removing the fixed 2 kHz assumption)
-Simultaneous multi-tone cancellation via concurrent adaptive filters
-TDM-capable microphones for additional spatial error sensors
-On-device secondary-path measurement to eliminate calibration error
-Adaptive beam steering to follow the listener in real time
-Project website
-This folder is a static website presenting the project (team, background, design, results, photo gallery, interactive 360° model viewers, and the full final report). Open index.html in a browser, or host it free on GitHub Pages — see DEPLOY.md. The complete technical documentation is in final-report.pdf.
 Team
 Member
 Role
