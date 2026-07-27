@@ -235,7 +235,7 @@
       font-size:clamp(6rem,11vw,12rem);
     }
     .wave-sub {
-      position:absolute; left:282vw; top:50%; transform:translateY(-50%);
+      position:absolute; left:250vw; top:50%; transform:translateY(-50%);
       z-index:5; max-width:24vw;
     }
     .wave-sub p { font-size:.95rem; font-weight:300; color:var(--t2); line-height:1.8; }
@@ -627,12 +627,12 @@
   <div class="sec lt1 s-wave" data-sec="0" data-lbl="01 / 09">
     <div class="wave-start px" data-spd="0.82">
       <p class="eyebrow">ECE 499 Capstone &mdash; Group 17 &mdash; University of Victoria</p>
-      <p>This is a 1 kHz tone. Keep scrolling to delete it.</p>
+      <p>This is a constant tone. Keep scrolling to delete it.</p>
     </div>
     <div class="wave-title px" data-spd="0.94">
       <div class="display"><span>Noise</span> <span class="dim">Deleter</span></div>
     </div>
-    <div class="wave-sub px" data-spd="0.88">
+    <div class="wave-sub px" data-spd="0.93">
       <p>An adaptive active noise cancellation system that suppresses harmful
       noise at a defined listening position — an eight-driver phased array,
       the FxLMS algorithm, and a fully custom PCB.</p>
@@ -741,6 +741,10 @@
         <div class="tm-sys">HW / FW / SW — TDM Output, System Integration, Parameter Tuning</div>
       </div>
       <div class="tm">
+        <div class="tm-role">Design Engineer Lead</div>
+        <div class="tm-name">Finn<br>Berg</div>
+        <div class="tm-sys">Enclosures — CAD Design, 3D Printing, Speaker Array Mounting</div>
+      <div class="tm">
         <div class="tm-role">Software Lead</div>
         <div class="tm-name">Benjamin<br>Blake</div>
         <div class="tm-sys">DSP &amp; Firmware — FxLMS Algorithm, I&sup2;S Interface, Architecture</div>
@@ -750,10 +754,7 @@
         <div class="tm-name">Nicholas<br>Guildford</div>
         <div class="tm-sys">PCB Design — Microcontroller, Power Supply, Amplifiers, Microphones</div>
       </div>
-      <div class="tm">
-        <div class="tm-role">Physical Structure Lead</div>
-        <div class="tm-name">Finn<br>Berg</div>
-        <div class="tm-sys">Enclosures — CAD Design, 3D Printing, Speaker Array Mounting</div>
+
       </div>
       <div class="team-scroll-hint" id="teamHint">
         <span>Scroll</span>
@@ -773,7 +774,7 @@
       <div class="vw-hint">Click &amp; drag to rotate</div>
     </div>
     <div class="vw" id="vw2">
-      <div class="vw-label">Interior Components</div>
+      <div class="vw-label">Exploded View</div>
       <div class="vw-inner" id="vi2">
         <iframe src="turntable-dissected.html" title="Exploded component view" scrolling="no"></iframe>
       </div>
