@@ -2,14 +2,14 @@ Noise Deleter
 ECE 499 Capstone — Group 17 — University of Victoria — 2026
 
 The Noise Deleter is an adaptive active noise cancellation (ANC) system that suppresses harmful noise at a defined listening position in open air. Instead of headphones or passive barriers, it uses an eight-driver phased speaker array to steer a beam of destructive interference at the listener, adapting in real time with the FxLMS algorithm on fully custom hardware.
-Motivation
-Noise pollution in professional and care settings degrades quality of life for people with sensory processing conditions, and sustained exposure on construction and industrial sites causes irreversible hearing damage. Existing solutions leave a gap: passive barriers fail at low frequencies, consumer ANC headphones protect only one wearer, and laboratory spatial-ANC systems demand high channel counts and infrastructure. The Noise Deleter targets that middle ground — self-contained, built from commodity hardware, and under 10 W — in line with EGBC Code of Ethics Guideline 1: holding paramount the safety, health, and welfare of the public and workplace.
-How it works
+Motivation:
+Noise pollution in professional and care settings degrades quality of life for people with sensory processing conditions, and sustained exposure on construction and industrial sites causes irreversible hearing damage. Existing solutions leave a gap: passive barriers fail at low frequencies, consumer ANC headphones protect only one wearer, and laboratory spatial-ANC systems demand high channel counts and infrastructure. The Noise Deleter targets that middle ground — self-contained, built from commodity hardware, and under 10 W
+How it works:
 A reference microphone near the disturbance source measures the incoming noise.
 The controller generates an anti-noise waveform (equal amplitude, opposite phase) and drives the eight-speaker array as a phased beam aimed at the listening position.
 An error microphone at the listening position measures the residual sound.
 The FxLMS algorithm updates one complex weight per speaker (8 total) every sample at 48 kHz, scaled by the measured secondary path, continuously driving the residual toward zero. A divergence detector mutes and resets the system if adaptation goes unstable.
-System design
+System design:
 Subsystem
 Details
 Speaker array
