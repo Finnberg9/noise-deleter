@@ -220,7 +220,7 @@
     /* ═════════════════════════════════════════════════
        0. HERO WAVE  (320vw — canvas behind, title in track)
     ═════════════════════════════════════════════════ */
-    .s-wave { width:320vw; background:linear-gradient(90deg, var(--w1) 0%, var(--w1) 70%, var(--w) 100%); }
+    .s-wave { width:360vw; background:linear-gradient(90deg, var(--w1) 0%, var(--w1) 70%, var(--w) 100%); }
     .wave-start {
       position:absolute; left:6vw; top:50%; transform:translateY(-50%);
       z-index:5; max-width:30vw;
@@ -235,7 +235,10 @@
       font-size:clamp(6rem,11vw,12rem);
     }
     .wave-sub {
-      position:absolute; left:270vw; top:50%; transform:translateY(-50%);
+      /* fallback position — overridden precisely by layoutHeroText()
+         once the real title width is measured, so it always sits
+         right after the title with no gap-guessing and no overlap */
+      position:absolute; left:290vw; top:50%; transform:translateY(-50%);
       z-index:5; max-width:24vw;
     }
     .wave-sub p { font-size:.95rem; font-weight:300; color:var(--t2); line-height:1.8; }
@@ -632,7 +635,7 @@
     <div class="wave-title px" data-spd="0.94">
       <div class="display"><span>Noise</span> <span class="dim">Deleter</span></div>
     </div>
-    <div class="wave-sub px" data-spd="0.93">
+    <div class="wave-sub px" data-spd="0.93" id="waveSub">
       <p>An adaptive active noise cancellation system that suppresses harmful
       noise at a defined listening position — an eight-driver phased array,
       the FxLMS algorithm, and a fully custom PCB.</p>
@@ -744,6 +747,7 @@
         <div class="tm-role">Design Engineer Lead</div>
         <div class="tm-name">Finn<br>Berg</div>
         <div class="tm-sys">Enclosures — CAD Design, 3D Printing, Speaker Array Mounting</div>
+      </div>
       <div class="tm">
         <div class="tm-role">Software Lead</div>
         <div class="tm-name">Benjamin<br>Blake</div>
@@ -753,8 +757,6 @@
         <div class="tm-role">Hardware Lead</div>
         <div class="tm-name">Nicholas<br>Guildford</div>
         <div class="tm-sys">PCB Design — Microcontroller, Power Supply, Amplifiers, Microphones</div>
-      </div>
-
       </div>
       <div class="team-scroll-hint" id="teamHint">
         <span>Scroll</span>
@@ -1089,8 +1091,56 @@ function measure(){
   canvas.height = vpH * (window.devicePixelRatio||1);
   canvas.style.width = vpW+'px'; canvas.style.height = vpH+'px';
   cnv.setTransform(window.devicePixelRatio||1,0,0,window.devicePixelRatio||1,0,0);
+  refineLayout();
 }
 window.addEventListener('resize', measure);
+
+/* ── Precise text layout ──────────────────────────────
+   Fixed vw offsets for the hero subtitle and the giant
+   background "ghost" words were guessed, so on real font
+   metrics they either overlapped neighboring text or got
+   sliced off by the section's overflow:hidden edge. Both
+   are now positioned from the ELEMENT'S ACTUAL RENDERED
+   WIDTH (measured via offsetWidth, unaffected by the track's
+   scroll transform), so they are correct on any screen size
+   or font-loading timing, not just the one I eyeballed. ──── */
+function refineLayout(){
+  /* 1) Hero subtitle: place it a fixed gap after the title's
+        real right edge — never overlaps, never guesses. */
+  const titleWrap = document.querySelector('.wave-title');
+  const titleEl   = document.querySelector('.wave-title .display');
+  const subEl     = document.getElementById('waveSub');
+  if(titleWrap && titleEl && subEl){
+    const titleLeftPx = parseFloat(getComputedStyle(titleWrap).left) || 0;
+    const titleWidthPx = titleEl.offsetWidth;
+    const gapPx = vpW * 0.035;
+    const leftPx = titleLeftPx + titleWidthPx + gapPx;
+    subEl.style.left = (leftPx / vpW * 100).toFixed(2) + 'vw';
+  }
+
+  /* 2) Ghost background words: never let the rendered word
+        cross the right edge of its own section (which clips
+        via overflow:hidden). Only ever pulls a word further
+        LEFT than its authored position — a word that already
+        fits is left untouched, including intentional left-edge
+        bleed like SILENCE / GROUP 17. */
+  document.querySelectorAll('.ghost').forEach(el=>{
+    const sec = el.closest('.sec');
+    if(!sec) return;
+    if(el.dataset.baseLeft===undefined){
+      el.dataset.baseLeft = parseFloat(getComputedStyle(el).left) || 0;
+    }
+    const baseLeftPx = parseFloat(el.dataset.baseLeft);
+    const wordWidthPx = el.offsetWidth;
+    const marginPx = vpW * 0.02;
+    const maxLeftPx = sec.offsetWidth - wordWidthPx - marginPx;
+    const finalLeftPx = Math.min(baseLeftPx, maxLeftPx);
+    el.style.left = (finalLeftPx / vpW * 100).toFixed(2) + 'vw';
+  });
+}
+if(document.fonts && document.fonts.ready){
+  document.fonts.ready.then(refineLayout);
+}
 
 function clamp(v,lo,hi){ return Math.max(lo,Math.min(v,hi)); }
 
