@@ -58,16 +58,6 @@
     /* ─── Parallax wrapper ───────────────────────────── */
     .px { will-change:transform; }
 
-    /* ─── Ghost words (huge outlined background text) ── */
-    .ghost {
-      position:absolute; z-index:0; pointer-events:none; user-select:none;
-      font-family:'Montserrat',sans-serif; font-weight:900; line-height:1;
-      color:transparent;
-      -webkit-text-stroke:1.5px rgba(0,0,0,0.07);
-      white-space:nowrap;
-    }
-    .ghost.inv { -webkit-text-stroke:1.5px rgba(255,255,255,0.07); }
-
     /* ─── Liquid glass controls ──────────────────────── */
     .glass {
       backdrop-filter:blur(24px) saturate(1.9);
@@ -154,15 +144,35 @@
     nav.inv .nav-logo { color:var(--ti); }
     .nav-right { display:flex; align-items:center; gap:28px; }
     .nav-items { display:flex; gap:28px; list-style:none; }
+    .nav-items li { position:relative; }
     .nav-items button, #sndBtn {
       font-family:inherit; font-size:.72rem; font-weight:500;
       letter-spacing:.08em; text-transform:uppercase;
       background:none; border:none; cursor:pointer;
-      color:var(--t2); transition:color .25s;
+      color:var(--t2); position:relative;
+      transition:color .25s, transform .3s var(--ease);
     }
     .nav-items button:hover, #sndBtn:hover { color:var(--t); }
     nav.inv .nav-items button, nav.inv #sndBtn { color:var(--ti3); }
     nav.inv .nav-items button:hover, nav.inv #sndBtn:hover { color:var(--ti); }
+
+    /* Active-section indicator: the current tab nudges down and
+       grows a small rounded bulge beneath it, poking out of the
+       nav bar. Same treatment fires instantly on click. */
+    .nav-items button.active { color:var(--t); transform:translateY(2px); }
+    nav.inv .nav-items button.active { color:var(--ti); }
+    .nav-items button.active::after {
+      content:''; position:absolute; left:50%; bottom:-15px; transform:translateX(-50%);
+      width:26px; height:14px; border-radius:0 0 14px 14px;
+      background:rgba(255,255,255,0.55);
+      backdrop-filter:blur(20px) saturate(1.8); -webkit-backdrop-filter:blur(20px) saturate(1.8);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.8), 0 6px 14px rgba(0,0,0,0.14);
+      pointer-events:none;
+    }
+    nav.inv .nav-items button.active::after {
+      background:rgba(10,10,10,0.55);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 14px rgba(0,0,0,0.4);
+    }
     #sndBtn { border:1px solid var(--ln); border-radius:20px; padding:5px 14px; }
     nav.inv #sndBtn { border-color:var(--lni); }
 
@@ -220,7 +230,7 @@
     /* ═════════════════════════════════════════════════
        0. HERO WAVE  (320vw — canvas behind, title in track)
     ═════════════════════════════════════════════════ */
-    .s-wave { width:360vw; background:linear-gradient(90deg, var(--w1) 0%, var(--w1) 70%, var(--w) 100%); }
+    .s-wave { width:420vw; background:linear-gradient(90deg, var(--w1) 0%, var(--w1) 70%, var(--w) 100%); }
     .wave-start {
       position:absolute; left:6vw; top:50%; transform:translateY(-50%);
       z-index:5; max-width:30vw;
@@ -239,7 +249,7 @@
          once the real title width is measured, so it always sits
          right after the title with no gap-guessing and no overlap */
       position:absolute; left:290vw; top:50%; transform:translateY(-50%);
-      z-index:5; max-width:24vw;
+      z-index:5; max-width:26vw;
     }
     .wave-sub p { font-size:.95rem; font-weight:300; color:var(--t2); line-height:1.8; }
 
@@ -276,15 +286,27 @@
     .prob-body { font-size:.9rem; font-weight:300; color:var(--t2); line-height:1.85; max-width:440px; }
     .prob-r {
       flex:0 0 34%; display:flex; flex-direction:column; justify-content:center;
-      padding:72px 52px 72px 48px; gap:12px; position:relative; z-index:2;
+      padding:72px 52px 72px 48px; gap:14px; position:relative; z-index:2;
     }
+    /* Frosted glass card, consistent with .spec-row / .ack-item.
+       No per-card parallax here (that caused the staircase drift) —
+       cards move as one rigid group with the rest of the section. */
     .issue {
-      padding:16px 20px; background:var(--w);
-      border:1px solid var(--ln); border-left:2px solid var(--metal);
-      border-radius:4px;
+      padding:20px 24px; background:rgba(255,255,255,0.72);
+      backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+      border:1px solid var(--ln); border-radius:10px;
+      box-shadow:0 4px 16px rgba(0,0,0,0.04);
+      transition:transform .35s var(--ease), box-shadow .35s var(--ease), background .35s;
     }
     .issue h4 { font-size:.82rem; font-weight:600; margin-bottom:5px; }
     .issue p  { font-size:.75rem; color:var(--t2); line-height:1.65; font-weight:300; }
+
+    /* Shared upward hover bulge for the site's info cards */
+    .issue:hover, .spec-row:hover, .ack-item:hover {
+      transform:translateY(-6px);
+      box-shadow:0 20px 40px rgba(0,0,0,0.12);
+      background:var(--w);
+    }
 
     /* ═════════════════════════════════════════════════
        3. TEAM  (110vw + 3D picker wheel, Apple style)
@@ -356,7 +378,7 @@
        5. DESIGN  (190vw — specs + images)
     ═════════════════════════════════════════════════ */
     .s-design {
-      width:220vw;
+      width:260vw;
       background:linear-gradient(90deg, var(--w) 0%, var(--w2) 25%, var(--w2) 75%, var(--w) 100%);
     }
     .des-l {
@@ -373,16 +395,17 @@
       background:rgba(255,255,255,0.72); border:1px solid var(--ln); border-radius:10px;
       padding:20px 26px; display:flex; flex-direction:column; gap:5px;
       backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+      transition:transform .35s var(--ease), box-shadow .35s var(--ease), background .35s;
     }
     .spec-row h4 { font-size:.84rem; font-weight:600; }
     .spec-row p  { font-size:.76rem; color:var(--t2); line-height:1.65; font-weight:300; }
     .des-imgs {
       flex:1; display:flex; align-items:center; justify-content:center;
-      gap:12vw; padding:0 6vw; position:relative; z-index:2;
+      gap:16vw; padding:0 8vw; position:relative; z-index:2;
     }
     .des-fig { display:flex; flex-direction:column; gap:14px; }
     .des-fig img {
-      width:26vw; max-height:56vh; object-fit:contain;
+      width:34vw; max-height:66vh; object-fit:contain;
       background:var(--w); border:1px solid var(--ln); border-radius:8px;
       padding:20px; filter:drop-shadow(0 16px 32px rgba(0,0,0,0.08));
     }
@@ -473,12 +496,13 @@
     .ack-head > p { font-size:.84rem; color:var(--t2); max-width:260px; line-height:1.7; font-weight:300; text-align:right; }
     .ack-grid {
       display:grid; grid-template-columns:repeat(3,1fr);
-      gap:1px; background:var(--ln);
-      border:1px solid var(--ln); border-radius:6px; overflow:hidden;
-      position:relative; z-index:2;
+      gap:14px; position:relative; z-index:2;
     }
-    .ack-item { background:var(--w); padding:18px 20px; transition:background .2s; }
-    .ack-item:hover { background:var(--w1); }
+    .ack-item {
+      background:var(--w1); border:1px solid var(--ln); border-radius:10px;
+      padding:18px 20px;
+      transition:transform .35s var(--ease), box-shadow .35s var(--ease), background .35s;
+    }
     .ack-for { font-size:.62rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--t3); margin-bottom:6px; }
     .ack-item h4 { font-size:.82rem; font-weight:600; margin-bottom:4px; }
     .ack-item p  { font-size:.73rem; color:var(--t2); line-height:1.6; font-weight:300; }
@@ -614,8 +638,8 @@
       <li><button data-g="2">Problem</button></li>
       <li><button data-g="3">Team</button></li>
       <li><button data-g="4">Device</button></li>
-      <li><button data-g="7">Results</button></li>
-      <li><button data-g="9">Report</button></li>
+      <li><button data-g="7" data-target="#resContent">Results</button></li>
+      <li><button data-g="9" data-target="#repContent">Report</button></li>
     </ul>
   </div>
 </nav>
@@ -630,24 +654,23 @@
   <div class="sec lt1 s-wave" data-sec="0" data-lbl="01 / 09">
     <div class="wave-start px" data-spd="0.82">
       <p class="eyebrow">ECE 499 Capstone &mdash; Group 17 &mdash; University of Victoria</p>
-      <p>This is a constant tone. Keep scrolling to delete it.</p>
+      <p>This is a tone, scroll to delete it.</p>
     </div>
     <div class="wave-title px" data-spd="0.94">
       <div class="display"><span>Noise</span> <span class="dim">Deleter</span></div>
     </div>
     <div class="wave-sub px" data-spd="0.93" id="waveSub">
-      <p>An adaptive active noise cancellation system that suppresses harmful
-      noise at a defined listening position — an eight-driver phased array,
-      the FxLMS algorithm, and a fully custom PCB.</p>
+      <p>An adaptive active noise cancellation system built on an
+      eight-driver phased array, the FxLMS algorithm, and a fully
+      custom PCB.</p>
     </div>
   </div>
 
   <!-- 1. INTRO / STATS ───────────────────────────────── -->
   <div class="sec lt s-intro" data-sec="1" data-lbl="02 / 09">
-    <span class="ghost px" data-spd="0.52" style="font-size:38vw; left:-8vw; bottom:-8vw;">SILENCE</span>
     <div class="intro-in">
       <div class="intro-l">
-        <img src="img/device-array.png" alt="Noise Deleter speaker array" data-r />
+        <img src="img/device-hero.png" alt="Noise Deleter speaker array" data-r />
       </div>
       <div class="intro-r">
         <div class="display px" data-spd="1.03" id="introTitle">
@@ -671,7 +694,6 @@
 
   <!-- 2. PROBLEM ─────────────────────────────────────── -->
   <div class="sec lt1 s-problem" data-sec="2" data-lbl="03 / 09">
-    <span class="ghost px" data-spd="0.48" style="font-size:42vw; left:34vw; top:-7vw;">NOISE</span>
     <div class="prob-l">
       <p class="eyebrow px" data-spd="0.92">Background</p>
       <div class="display big-q px" data-spd="1.05" id="bqTitle">
@@ -691,19 +713,19 @@
       </p>
     </div>
     <div class="prob-r">
-      <div class="issue px" data-spd="1.03" data-r>
+      <div class="issue" data-r>
         <h4>Sensory-Sensitive Individuals</h4>
         <p>Everyday noise in care facilities causes significant distress for people with sensory processing disorders.</p>
       </div>
-      <div class="issue px" data-spd="1.06" data-r data-r-d="1">
+      <div class="issue" data-r data-r-d="1">
         <h4>Occupational Hearing Damage</h4>
         <p>Workers at construction and industrial sites are exposed to noise exceeding safe thresholds, causing permanent loss.</p>
       </div>
-      <div class="issue px" data-spd="1.09" data-r data-r-d="2">
+      <div class="issue" data-r data-r-d="2">
         <h4>EGBC Code of Ethics &mdash; Guideline 1</h4>
         <p>Hold paramount the safety, health, and welfare of the public and the promotion of health and safety in the workplace.</p>
       </div>
-      <div class="issue px" data-spd="1.12" data-r data-r-d="3">
+      <div class="issue" data-r data-r-d="3">
         <h4>No Practical Middle Ground</h4>
         <p>Existing solutions are either too limited (headphones, foam) or too complex and expensive (lab-grade spatial ANC) for real deployment.</p>
       </div>
@@ -787,7 +809,6 @@
 
   <!-- 5. DESIGN ──────────────────────────────────────── -->
   <div class="sec lt1 s-design" data-sec="5" data-lbl="06 / 09">
-    <span class="ghost px" data-spd="0.50" style="font-size:34vw; left:60vw; bottom:-6vw;">DESIGN</span>
     <div class="des-l">
       <p class="eyebrow px" data-spd="0.92">Design</p>
       <div class="display big-q px" data-spd="1.05" id="desTitle" style="font-size:clamp(2rem,3.5vw,3.2rem);margin-bottom:28px;">
@@ -796,7 +817,9 @@
       </div>
       <p class="px" data-spd="0.97" data-r style="font-size:.84rem;color:var(--t2);line-height:1.75;font-weight:300;max-width:380px;">
         Four interdependent subsystems — software, hardware, firmware, and enclosure —
-        designed and validated independently before closed-loop integration.
+        designed and validated independently before closed-loop integration. Viewed
+        from above, the enclosure's silhouette is intentionally shaped after the
+        curved body of a guitar.
       </p>
     </div>
     <div class="des-specs">
@@ -823,19 +846,18 @@
     </div>
     <div class="des-imgs">
       <figure class="des-fig px" data-spd="0.96" data-r>
-        <img src="img/device-front.png" alt="Front view of the Noise Deleter device" />
+        <img src="img/device-angle.png" alt="Three-quarter view of the assembled Noise Deleter enclosure" />
         <figcaption>01 &mdash; Assembled Device</figcaption>
       </figure>
       <figure class="des-fig px" data-spd="1.04" data-r data-r-d="2" style="margin-top:10vh;">
-        <img src="img/device-exploded.png" alt="Exploded component view" />
-        <figcaption>02 &mdash; Exploded Assembly</figcaption>
+        <img src="img/device-topdown.png" alt="Top-down view of the enclosure, its silhouette shaped after a guitar body" />
+        <figcaption>02 &mdash; Top-Down Silhouette, Guitar-Inspired</figcaption>
       </figure>
     </div>
   </div>
 
   <!-- 6. GALLERY — prototype photos ──────────────────── -->
   <div class="sec lt s-gallery" data-sec="6" data-lbl="07 / 09">
-    <span class="ghost px" data-spd="0.50" style="font-size:30vw; left:60vw; top:-4vw;">PROTOTYPE</span>
     <div class="gal-intro px" data-spd="0.95">
       <p class="eyebrow">The Prototype</p>
       <div class="display" id="galTitle" style="font-size:clamp(2rem,3.4vw,3.2rem);margin-bottom:24px;">
@@ -879,8 +901,7 @@
 
   <!-- 7. RESULTS ─────────────────────────────────────── -->
   <div class="sec s-results" data-sec="7" data-lbl="08 / 09">
-    <span class="ghost inv px" data-spd="0.50" style="font-size:32vw; left:70vw; top:-5vw;">RESULTS</span>
-    <div class="res-col res-col-title">
+    <div class="res-col res-col-title" id="resContent">
       <p class="eyebrow inv px" data-spd="0.94">Results &amp; Findings</p>
       <div class="display big-q px" data-spd="1.04" id="resTitle"
            style="font-size:clamp(2rem,3.5vw,3.4rem);margin-bottom:24px;color:var(--ti);">
@@ -971,7 +992,6 @@
 
   <!-- 8. ACKNOWLEDGMENTS ─────────────────────────────── -->
   <div class="sec lt s-ack" data-sec="8" data-lbl="09 / 09">
-    <span class="ghost px" data-spd="0.52" style="font-size:28vw; left:36vw; bottom:-4vw;">THANKS</span>
     <div class="ack-head">
       <div>
         <p class="eyebrow px" data-spd="0.92">Acknowledgments</p>
@@ -997,7 +1017,7 @@
 
   <!-- 9. FINAL REPORT ────────────────────────────────── -->
   <div class="sec s-report" data-sec="9" data-lbl="">
-    <div class="rep-side">
+    <div class="rep-side" id="repContent">
       <p class="eyebrow inv">Final Report</p>
       <h2>ECE 499<br>Final<br>Report</h2>
       <p>Complete technical documentation covering design specifications, hardware and software methodology, testing results, and conclusions.</p>
@@ -1020,7 +1040,6 @@
 
   <!-- FOOTER ─────────────────────────────────────────── -->
   <div class="s-foot">
-    <span class="ghost inv px" data-spd="0.55" style="font-size:24vw; left:-6vw; top:4vw;">GROUP 17</span>
     <div class="foot-title">
       <span>Noise</span><span class="dim">Deleter</span>
     </div>
@@ -1096,17 +1115,13 @@ function measure(){
 window.addEventListener('resize', measure);
 
 /* ── Precise text layout ──────────────────────────────
-   Fixed vw offsets for the hero subtitle and the giant
-   background "ghost" words were guessed, so on real font
-   metrics they either overlapped neighboring text or got
-   sliced off by the section's overflow:hidden edge. Both
-   are now positioned from the ELEMENT'S ACTUAL RENDERED
-   WIDTH (measured via offsetWidth, unaffected by the track's
-   scroll transform), so they are correct on any screen size
-   or font-loading timing, not just the one I eyeballed. ──── */
+   The hero subtitle's position was a guessed vw offset, so
+   on real font metrics it could overlap the title. It is now
+   placed a fixed gap after the title's ACTUAL RENDERED WIDTH
+   (measured via offsetWidth, unaffected by the track's scroll
+   transform), so it is correct on any screen size or font-
+   loading timing, not just the one I eyeballed. ──────────── */
 function refineLayout(){
-  /* 1) Hero subtitle: place it a fixed gap after the title's
-        real right edge — never overlaps, never guesses. */
   const titleWrap = document.querySelector('.wave-title');
   const titleEl   = document.querySelector('.wave-title .display');
   const subEl     = document.getElementById('waveSub');
@@ -1117,26 +1132,6 @@ function refineLayout(){
     const leftPx = titleLeftPx + titleWidthPx + gapPx;
     subEl.style.left = (leftPx / vpW * 100).toFixed(2) + 'vw';
   }
-
-  /* 2) Ghost background words: never let the rendered word
-        cross the right edge of its own section (which clips
-        via overflow:hidden). Only ever pulls a word further
-        LEFT than its authored position — a word that already
-        fits is left untouched, including intentional left-edge
-        bleed like SILENCE / GROUP 17. */
-  document.querySelectorAll('.ghost').forEach(el=>{
-    const sec = el.closest('.sec');
-    if(!sec) return;
-    if(el.dataset.baseLeft===undefined){
-      el.dataset.baseLeft = parseFloat(getComputedStyle(el).left) || 0;
-    }
-    const baseLeftPx = parseFloat(el.dataset.baseLeft);
-    const wordWidthPx = el.offsetWidth;
-    const marginPx = vpW * 0.02;
-    const maxLeftPx = sec.offsetWidth - wordWidthPx - marginPx;
-    const finalLeftPx = Math.min(baseLeftPx, maxLeftPx);
-    el.style.left = (finalLeftPx / vpW * 100).toFixed(2) + 'vw';
-  });
 }
 if(document.fonts && document.fonts.ready){
   document.fonts.ready.then(refineLayout);
@@ -1275,16 +1270,28 @@ window.addEventListener('keydown',e=>{
 });
 
 /* ── Nav goto ─────────────────────────────────────── */
-document.querySelectorAll('[data-g]').forEach(btn=>{
+/* Most buttons jump to their section's own left edge. Results and
+   Report have huge white→black fade-in buffers before any content
+   appears, so jumping to the section edge lands you on blank
+   gradient — those two instead carry data-target pointing at the
+   actual content wrapper, and we scroll to THAT element's position. */
+const navBtns=[...document.querySelectorAll('.nav-items button[data-g]')];
+navBtns.forEach(btn=>{
   btn.addEventListener('click',()=>{
-    const secs=[...document.querySelectorAll('[data-sec]')];
-    const s=secs[parseInt(btn.dataset.g)];
-    if(s){ const r=s.getBoundingClientRect(); tx=clamp(cx+r.left,0,maxScroll); }
+    let target = btn.dataset.target ? document.querySelector(btn.dataset.target) : null;
+    if(!target){
+      const secs=[...document.querySelectorAll('[data-sec]')];
+      target = secs[parseInt(btn.dataset.g)];
+    }
+    if(target){ const r=target.getBoundingClientRect(); tx=clamp(cx+r.left,0,maxScroll); }
+    navBtns.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
   });
 });
 /* Logo → back to the very start */
 document.getElementById('homeBtn').addEventListener('click',()=>{
   tx=0; teamVY=0;
+  navBtns.forEach(b=>b.classList.remove('active'));
 });
 
 /* ── Iframe caps ──────────────────────────────────── */
@@ -1411,7 +1418,7 @@ function updateNav(){
   hint.classList.toggle('inv',dark);
 }
 
-/* ── Counter + progress ───────────────────────────── */
+/* ── Counter + progress + nav scrollspy ───────────── */
 function updateCtr(){
   const secs=[...document.querySelectorAll('[data-sec]')];
   let cur=0;
@@ -1419,6 +1426,15 @@ function updateCtr(){
   const lbl=secs[cur]?.dataset.lbl||'';
   if(lbl) ctr.textContent=lbl;
   pf.style.width=(maxScroll>0?(cx/maxScroll)*100:0)+'%';
+
+  /* Highlight the nav button for the most recently entered
+     section (its data-g <= cur, picking the largest such g). */
+  let bestBtn=null, bestG=-1;
+  navBtns.forEach(b=>{
+    const g=parseInt(b.dataset.g);
+    if(g<=cur && g>bestG){ bestG=g; bestBtn=b; }
+  });
+  navBtns.forEach(b=>b.classList.toggle('active', b===bestBtn));
 }
 
 /* ── RAF loop ─────────────────────────────────────── */
