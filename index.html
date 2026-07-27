@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Noise Deleter — ECE 499 Group 17</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;1,300&family=Montserrat:ital,wght@0,700;0,800;0,900;1,800;1,900&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── Tokens ─────────────────────────────────────── */
+    :root {
+      --w:    #ffffff;
+      --w1:   #f5f5f7;
+      --w2:   #e8e8ed;
+      --d:    #0a0a0a;
+      --d1:   #111111;
+      --d2:   #1c1c1e;
+      --t:    #1d1d1f;
+      --t2:   #6e6e73;
+      --t3:   #a1a1a6;
+      --ti:   #f5f5f7;
+      --ti2:  #a1a1a6;
+      --ti3:  #6e6e73;
+      --metal:#8e8e93;
+      --ln:   rgba(0,0,0,0.09);
+      --lni:  rgba(255,255,255,0.09);
+      --ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      --eout: cubic-bezier(0.0,  0.0,  0.2,  1.0);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+    html, body { width:100vw; height:100vh; overflow:hidden; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Helvetica Neue', sans-serif;
+      background: var(--w);
+      color: var(--t);
+    }
+    a { color: inherit; text-decoration: none; }
+
+    /* ─── Viewport + track ───────────────────────────── */
+    #vp { position:fixed; inset:0; overflow:hidden; }
+    #track {
+      display:flex; flex-direction:row; align-items:stretch;
+      height:100vh; will-change:transform;
+    }
+
+    /* ─── Section base ───────────────────────────────── */
+    .sec {
+      flex-shrink:0; height:100vh;
+      position:relative; overflow:hidden;
+      display:flex; align-items:stretch;
+    }
+    .lt { background:var(--w);  color:var(--t);  }
+    .lt1{ background:var(--w1); color:var(--t);  }
+    .dk { background:var(--d);  color:var(--ti); }
+    .dk1{ background:var(--d1); color:var(--ti); }
+
+    /* ─── Parallax wrapper ───────────────────────────── */
+    .px { will-change:transform; }
+
+    /* ─── Ghost words (huge outlined background text) ── */
+    .ghost {
+      position:absolute; z-index:0; pointer-events:none; user-select:none;
+      font-family:'Montserrat',sans-serif; font-weight:900; line-height:1;
+      color:transparent;
+      -webkit-text-stroke:1.5px rgba(0,0,0,0.07);
+      white-space:nowrap;
+    }
+    .ghost.inv { -webkit-text-stroke:1.5px rgba(255,255,255,0.07); }
+
+    /* ─── Liquid glass controls ──────────────────────── */
+    .glass {
+      backdrop-filter:blur(24px) saturate(1.9);
+      -webkit-backdrop-filter:blur(24px) saturate(1.9);
+      background:rgba(255,255,255,0.42);
+      border:1px solid rgba(255,255,255,0.65);
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.8),
+        inset 0 -1px 0 rgba(0,0,0,0.04),
+        0 8px 32px rgba(0,0,0,0.10);
+      border-radius:999px;
+    }
+    #heroCtl {
+      position:fixed; top:68px; left:50%; transform:translateX(-50%);
+      z-index:880; display:flex; align-items:center; gap:14px;
+      transition:opacity .5s;
+    }
+    .freq-ctl {
+      display:flex; align-items:center; gap:14px;
+      padding:12px 24px;
+    }
+    .freq-lbl {
+      font-size:.62rem; font-weight:700; letter-spacing:.12em;
+      text-transform:uppercase; color:var(--t2); white-space:nowrap;
+    }
+    .freq-read {
+      font-family:'Montserrat',sans-serif; font-weight:800; font-size:.95rem;
+      letter-spacing:-.01em; color:var(--t); min-width:82px; text-align:center;
+    }
+    #freqSlider {
+      -webkit-appearance:none; appearance:none;
+      width:220px; height:3px; border-radius:2px;
+      background:rgba(0,0,0,0.18); outline:none; cursor:pointer;
+    }
+    #freqSlider::-webkit-slider-thumb {
+      -webkit-appearance:none; appearance:none;
+      width:22px; height:22px; border-radius:50%;
+      background:rgba(255,255,255,0.9);
+      border:1px solid rgba(0,0,0,0.10);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,1), 0 3px 10px rgba(0,0,0,0.22);
+      cursor:grab;
+    }
+    #freqSlider::-moz-range-thumb {
+      width:22px; height:22px; border-radius:50%;
+      background:rgba(255,255,255,0.9);
+      border:1px solid rgba(0,0,0,0.10);
+      box-shadow:0 3px 10px rgba(0,0,0,0.22); cursor:grab;
+    }
+    #sndBtn {
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      padding:14px 26px; cursor:pointer;
+      font-family:inherit; font-size:.72rem; font-weight:700;
+      letter-spacing:.14em; text-transform:uppercase; color:var(--t);
+      transition:background .25s, transform .15s;
+    }
+    #sndBtn:hover { background:rgba(255,255,255,0.6); }
+    #sndBtn:active { transform:scale(0.96); }
+    #sndBtn .dot {
+      width:9px; height:9px; border-radius:50%;
+      background:rgba(0,0,0,0.22); transition:background .25s, box-shadow .25s;
+    }
+    #sndBtn.on .dot {
+      background:var(--t);
+      box-shadow:0 0 0 4px rgba(0,0,0,0.08);
+    }
+
+    /* ─── NAV ────────────────────────────────────────── */
+    nav {
+      position:fixed; top:0; left:0; right:0; z-index:900;
+      height:52px; display:flex; align-items:center; justify-content:space-between;
+      padding:0 44px;
+      backdrop-filter:blur(20px) saturate(1.8);
+      -webkit-backdrop-filter:blur(20px) saturate(1.8);
+      border-bottom:1px solid var(--ln);
+      background:rgba(255,255,255,0.72);
+      transition:background .4s, border-color .4s;
+    }
+    nav.inv { background:rgba(10,10,10,0.72); border-bottom-color:var(--lni); }
+    .nav-logo {
+      font-family:'Montserrat',sans-serif;
+      font-weight:900; font-size:.82rem; letter-spacing:.06em; text-transform:uppercase;
+      color:var(--t); transition:color .4s;
+    }
+    nav.inv .nav-logo { color:var(--ti); }
+    .nav-right { display:flex; align-items:center; gap:28px; }
+    .nav-items { display:flex; gap:28px; list-style:none; }
+    .nav-items button, #sndBtn {
+      font-family:inherit; font-size:.72rem; font-weight:500;
+      letter-spacing:.08em; text-transform:uppercase;
+      background:none; border:none; cursor:pointer;
+      color:var(--t2); transition:color .25s;
+    }
+    .nav-items button:hover, #sndBtn:hover { color:var(--t); }
+    nav.inv .nav-items button, nav.inv #sndBtn { color:var(--ti3); }
+    nav.inv .nav-items button:hover, nav.inv #sndBtn:hover { color:var(--ti); }
+    #sndBtn { border:1px solid var(--ln); border-radius:20px; padding:5px 14px; }
+    nav.inv #sndBtn { border-color:var(--lni); }
+
+    /* ─── Progress / counter / hint ──────────────────── */
+    #prog { position:fixed; bottom:0; left:0; right:0; z-index:900; height:1px; background:var(--w2); }
+    #pf   { height:100%; background:var(--metal); width:0; }
+    #ctr  {
+      position:fixed; bottom:16px; left:44px; z-index:900;
+      font-size:.65rem; font-weight:500; letter-spacing:.14em; color:var(--t3);
+      transition:color .4s;
+    }
+    #ctr.inv { color:var(--ti3); }
+    #hint {
+      position:fixed; bottom:16px; right:44px; z-index:900;
+      font-size:.65rem; font-weight:500; letter-spacing:.18em; text-transform:uppercase;
+      color:var(--t3); transition:opacity .5s, color .4s;
+    }
+    #hint.inv { color:var(--ti3); }
+
+    /* ─── Wave canvas (fixed, hero only) ─────────────── */
+    #wave {
+      position:fixed; inset:0; z-index:1; pointer-events:none;
+    }
+
+    /* ─── Shared typography ──────────────────────────── */
+    .eyebrow {
+      font-size:.65rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase;
+      color:var(--t3); margin-bottom:20px;
+      display:flex; align-items:center; gap:12px;
+    }
+    .eyebrow::before { content:''; width:24px; height:1px; background:var(--metal); flex-shrink:0; }
+    .eyebrow.inv { color:var(--ti3); }
+    .display {
+      font-family:'Montserrat',sans-serif;
+      font-weight:900; letter-spacing:-.04em; line-height:.9;
+    }
+    .dim { color:var(--metal); }
+
+    .cr-wrap { overflow:hidden; }
+    .cr { display:block; transform:translateY(108%); transition:transform 1.1s var(--eout); }
+    .cr.go { transform:translateY(0); }
+    .cr.go.d1 { transition-delay:.08s; }
+    .cr.go.d2 { transition-delay:.16s; }
+
+    [data-r] { opacity:0; transform:translateY(32px); }
+    [data-r].go {
+      opacity:1; transform:none;
+      transition:opacity .9s var(--ease), transform .9s var(--ease);
+    }
+    [data-r].go.d1 { transition-delay:.10s; }
+    [data-r].go.d2 { transition-delay:.20s; }
+    [data-r].go.d3 { transition-delay:.30s; }
+    [data-r].go.d4 { transition-delay:.40s; }
+
+    /* ═════════════════════════════════════════════════
+       0. HERO WAVE  (320vw — canvas behind, title in track)
+    ═════════════════════════════════════════════════ */
+    .s-wave { width:320vw; background:linear-gradient(90deg, var(--w1) 0%, var(--w1) 70%, var(--w) 100%); }
+    .wave-start {
+      position:absolute; left:6vw; top:50%; transform:translateY(-50%);
+      z-index:5; max-width:30vw;
+    }
+    .wave-start .eyebrow { margin-bottom:16px; }
+    .wave-start p { font-size:.92rem; font-weight:300; color:var(--t2); line-height:1.8; }
+    .wave-title {
+      position:absolute; left:206vw; top:50%; transform:translateY(-50%);
+      z-index:5; white-space:nowrap;
+    }
+    .wave-title .display {
+      font-size:clamp(6rem,11vw,12rem);
+    }
+    .wave-sub {
+      position:absolute; left:282vw; top:50%; transform:translateY(-50%);
+      z-index:5; max-width:24vw;
+    }
+    .wave-sub p { font-size:.95rem; font-weight:300; color:var(--t2); line-height:1.8; }
+
+    /* ═════════════════════════════════════════════════
+       1. INTRO / STATS  (120vw)
+    ═════════════════════════════════════════════════ */
+    .s-intro { width:120vw; align-items:center; }
+    .intro-in { display:flex; width:100%; padding:0 8vw; gap:6vw; align-items:center; }
+    .intro-l { flex:1.1; }
+    .intro-l img {
+      width:100%; max-height:74vh; object-fit:contain;
+      filter:drop-shadow(0 24px 48px rgba(0,0,0,0.12));
+    }
+    .intro-r { flex:1; }
+    .intro-r .display { font-size:clamp(2.2rem,3.6vw,3.6rem); margin-bottom:28px; }
+    .intro-r .lead { font-size:.95rem; font-weight:300; color:var(--t2); line-height:1.85; max-width:420px; margin-bottom:44px; }
+    .hero-stats { display:flex; border-top:1px solid var(--ln); padding-top:28px; }
+    .stat { flex:1; padding-right:24px; border-right:1px solid var(--ln); margin-right:24px; }
+    .stat:last-child { border-right:none; margin-right:0; padding-right:0; }
+    .stat-v { font-family:'Montserrat',sans-serif; font-size:1.6rem; font-weight:800; letter-spacing:-.02em; line-height:1; }
+    .stat-l { font-size:.63rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--t3); margin-top:5px; }
+
+    /* ═════════════════════════════════════════════════
+       2. PROBLEM  (160vw)
+    ═════════════════════════════════════════════════ */
+    .s-problem { width:160vw; background:linear-gradient(90deg, var(--w) 0%, var(--w1) 35%, var(--w1) 65%, var(--w) 100%); }
+    .prob-l {
+      flex:1; display:flex; flex-direction:column; justify-content:center;
+      padding:72px 64px 72px 8vw;
+      position:relative; z-index:2;
+    }
+    .big-q { font-size:clamp(2.4rem,4.2vw,4.2rem); margin-bottom:32px; }
+    .big-q .dim2 { color:var(--t3); }
+    .prob-body { font-size:.9rem; font-weight:300; color:var(--t2); line-height:1.85; max-width:440px; }
+    .prob-r {
+      flex:0 0 34%; display:flex; flex-direction:column; justify-content:center;
+      padding:72px 52px 72px 48px; gap:12px; position:relative; z-index:2;
+    }
+    .issue {
+      padding:16px 20px; background:var(--w);
+      border:1px solid var(--ln); border-left:2px solid var(--metal);
+      border-radius:4px;
+    }
+    .issue h4 { font-size:.82rem; font-weight:600; margin-bottom:5px; }
+    .issue p  { font-size:.75rem; color:var(--t2); line-height:1.65; font-weight:300; }
+
+    /* ═════════════════════════════════════════════════
+       3. TEAM  (110vw + 3D picker wheel, Apple style)
+    ═════════════════════════════════════════════════ */
+    .s-team { width:110vw; }
+    .team-l {
+      flex:0 0 26vw; display:flex; flex-direction:column; justify-content:center;
+      padding:72px 44px 72px 6vw;
+      position:relative; z-index:2;
+    }
+    .team-h { font-size:clamp(2.4rem,4.5vw,4rem); margin-bottom:18px; }
+    .team-desc { font-size:.8rem; font-weight:300; color:var(--t2); line-height:1.75; }
+    .team-wheel-vp {
+      flex:1; position:relative; overflow:hidden;
+      perspective:1400px; perspective-origin:50% 50%;
+    }
+    .tm {
+      position:absolute; left:4vw; right:4vw; top:50%;
+      will-change:transform, opacity, filter;
+      pointer-events:none;
+    }
+    .tm-role {
+      font-size:.68rem; font-weight:700; letter-spacing:.22em;
+      text-transform:uppercase; color:var(--metal); margin-bottom:10px;
+    }
+    .tm-name {
+      font-family:'Montserrat',sans-serif; font-weight:900;
+      font-size:clamp(3.2rem,6.4vw,6.4rem); letter-spacing:-.04em; line-height:.95;
+      color:var(--t);
+    }
+    .tm-sys {
+      font-size:.82rem; font-weight:300; color:var(--t2);
+      line-height:1.6; margin-top:14px; max-width:560px;
+    }
+    .team-scroll-hint {
+      position:absolute; bottom:24px; left:50%; transform:translateX(-50%);
+      font-size:.62rem; letter-spacing:.16em; text-transform:uppercase; color:var(--t3);
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+      transition:opacity .4s;
+    }
+    .team-scroll-hint .arr { font-size:1rem; animation:bounce-y 1.8s ease-in-out infinite; }
+    @keyframes bounce-y { 0%,100%{transform:translateY(0)} 50%{transform:translateY(5px)} }
+
+    /* ═════════════════════════════════════════════════
+       4. STAGE — viewers (200vw, seamless white)
+    ═════════════════════════════════════════════════ */
+    .s-stage {
+      width:200vw; background:var(--w);
+      display:flex; flex-direction:row; align-items:stretch;
+    }
+    .vw {
+      flex:0 0 100vw; height:100vh; position:relative; overflow:hidden;
+      display:flex; align-items:center; justify-content:center; background:var(--w);
+    }
+    .vw-label {
+      position:absolute; top:72px; left:44px; z-index:20;
+      font-size:.62rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--t3);
+    }
+    .vw-hint {
+      position:absolute; bottom:24px; left:50%; transform:translateX(-50%); z-index:20;
+      font-size:.62rem; font-weight:500; letter-spacing:.16em; text-transform:uppercase; color:var(--t3);
+    }
+    .vw-inner { width:100%; height:100%; will-change:transform; }
+    .vw-inner iframe { width:100%; height:100%; border:none; display:block; }
+    .vw-cap { position:absolute; inset:0; z-index:10; cursor:grab; }
+    .vw-cap:active { cursor:grabbing; }
+
+    /* ═════════════════════════════════════════════════
+       5. DESIGN  (190vw — specs + images)
+    ═════════════════════════════════════════════════ */
+    .s-design {
+      width:220vw;
+      background:linear-gradient(90deg, var(--w) 0%, var(--w2) 25%, var(--w2) 75%, var(--w) 100%);
+    }
+    .des-l {
+      flex:0 0 30%; display:flex; flex-direction:column; justify-content:center;
+      padding:72px 56px 72px 6vw;
+      position:relative; z-index:2;
+    }
+    .des-specs {
+      flex:0 0 30%; display:flex; flex-direction:column; gap:14px;
+      justify-content:center; padding:72px 2vw;
+      position:relative; z-index:2;
+    }
+    .spec-row {
+      background:rgba(255,255,255,0.72); border:1px solid var(--ln); border-radius:10px;
+      padding:20px 26px; display:flex; flex-direction:column; gap:5px;
+      backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    }
+    .spec-row h4 { font-size:.84rem; font-weight:600; }
+    .spec-row p  { font-size:.76rem; color:var(--t2); line-height:1.65; font-weight:300; }
+    .des-imgs {
+      flex:1; display:flex; align-items:center; justify-content:center;
+      gap:12vw; padding:0 6vw; position:relative; z-index:2;
+    }
+    .des-fig { display:flex; flex-direction:column; gap:14px; }
+    .des-fig img {
+      width:26vw; max-height:56vh; object-fit:contain;
+      background:var(--w); border:1px solid var(--ln); border-radius:8px;
+      padding:20px; filter:drop-shadow(0 16px 32px rgba(0,0,0,0.08));
+    }
+    .des-fig figcaption {
+      font-size:.65rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--t3);
+    }
+
+    /* ═════════════════════════════════════════════════
+       6. GALLERY — prototype photos  (210vw)
+    ═════════════════════════════════════════════════ */
+    .s-gallery {
+      width:375vw;
+      background:var(--w); align-items:center;
+      display:flex; gap:9vw; padding:0 7vw;
+    }
+    .gal-intro { flex-shrink:0; width:22vw; }
+    .gal-fig { flex-shrink:0; display:flex; flex-direction:column; gap:14px; }
+    /* natural aspect ratio — no cropping */
+    .gal-fig img {
+      height:auto; border-radius:8px;
+      box-shadow:0 24px 60px rgba(0,0,0,0.14);
+    }
+    .gal-fig figcaption {
+      font-size:.65rem; font-weight:600; letter-spacing:.14em;
+      text-transform:uppercase; color:var(--t3);
+    }
+    .gal-lg  img { width:46vw; max-height:74vh; object-fit:contain; }
+    .gal-md  img { width:34vw; }
+    .gal-sm  img { width:26vw; }
+
+    /* ═════════════════════════════════════════════════
+       7. RESULTS  (170vw, dark)
+    ═════════════════════════════════════════════════ */
+    /* Fades white → black → white; 4 columns, everything fits 100vh */
+    .s-results {
+      width:340vw; color:var(--ti);
+      /* ~90vw-long fades: nearly a full screen of pure gradient each side */
+      background:linear-gradient(90deg, var(--w) 0vw, var(--d1) 90vw, var(--d1) calc(100% - 90vw), var(--w) 100%);
+      display:flex; align-items:center; gap:4vw; padding:0 96vw;
+    }
+    .res-col {
+      flex:1; display:flex; flex-direction:column; justify-content:center;
+      position:relative; z-index:2; max-height:86vh;
+    }
+    .res-col-title { flex:0.8; }
+    .ms-list { display:flex; flex-direction:column; }
+    .ms { display:flex; gap:16px; padding:14px 0; border-bottom:1px solid var(--lni); }
+    .ms:last-child { border-bottom:none; }
+    .ms-n {
+      font-family:'Montserrat',sans-serif; font-size:.65rem; font-weight:800;
+      letter-spacing:.1em; color:var(--ti3); flex-shrink:0; width:22px; padding-top:2px;
+    }
+    .ms-body h4 { font-size:.84rem; font-weight:600; color:var(--ti); margin-bottom:4px; }
+    .ms-body p  { font-size:.76rem; color:var(--ti3); line-height:1.65; font-weight:300; }
+    .ms-status { display:inline-block; margin-top:5px; font-size:.65rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--metal); }
+    .info-box { margin-top:20px; padding:18px 20px; border:1px solid var(--lni); border-radius:4px; }
+    .info-box h5 {
+      font-size:.65rem; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+      color:var(--metal); margin-bottom:10px;
+    }
+    .info-box li {
+      font-size:.76rem; color:var(--ti3); line-height:1.7; list-style:none;
+      padding-left:14px; position:relative; font-weight:300;
+    }
+    .info-box li + li { margin-top:4px; }
+    .info-box li::before { content:'—'; position:absolute; left:0; color:var(--ti3); opacity:.5; }
+    .test-tbl { width:100%; border-collapse:collapse; font-size:.76rem; }
+    .test-tbl th {
+      text-align:left; padding:9px 12px; background:var(--d2); color:var(--metal);
+      font-size:.62rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+      border-bottom:1px solid var(--lni);
+    }
+    .test-tbl td { padding:9px 12px; border-bottom:1px solid var(--lni); color:var(--ti3); font-weight:300; }
+    .test-tbl tr:last-child td { border-bottom:none; }
+    .test-tbl td:first-child { color:var(--ti2); font-weight:400; }
+    .test-tbl .pass    { color:var(--metal); font-weight:600; }
+    .test-tbl .partial { color:var(--ti3); font-weight:500; }
+
+    /* ═════════════════════════════════════════════════
+       7. ACKNOWLEDGMENTS  (130vw)
+    ═════════════════════════════════════════════════ */
+    .s-ack {
+      width:130vw;
+      display:flex; flex-direction:column; justify-content:center;
+      padding:72px 6vw;
+    }
+    .ack-head { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:36px; position:relative; z-index:2; }
+    .ack-head > p { font-size:.84rem; color:var(--t2); max-width:260px; line-height:1.7; font-weight:300; text-align:right; }
+    .ack-grid {
+      display:grid; grid-template-columns:repeat(3,1fr);
+      gap:1px; background:var(--ln);
+      border:1px solid var(--ln); border-radius:6px; overflow:hidden;
+      position:relative; z-index:2;
+    }
+    .ack-item { background:var(--w); padding:18px 20px; transition:background .2s; }
+    .ack-item:hover { background:var(--w1); }
+    .ack-for { font-size:.62rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--t3); margin-bottom:6px; }
+    .ack-item h4 { font-size:.82rem; font-weight:600; margin-bottom:4px; }
+    .ack-item p  { font-size:.73rem; color:var(--t2); line-height:1.6; font-weight:300; }
+
+    /* ═════════════════════════════════════════════════
+       8. FINAL REPORT  (120vw)
+    ═════════════════════════════════════════════════ */
+    /* Fades white → black and stays dark into the footer */
+    .s-report {
+      width:230vw; color:var(--ti);
+      /* ~90vw-long fade in; stays dark into the footer */
+      background:linear-gradient(90deg, var(--w) 0vw, var(--d1) 90vw, var(--d1) 100%);
+    }
+    .rep-side {
+      flex:0 0 22vw; display:flex; flex-direction:column; justify-content:center;
+      padding:72px 2vw 72px 0; margin-left:96vw;
+      background:transparent; position:relative; z-index:2;
+    }
+    .rep-side h2 {
+      font-family:'Montserrat',sans-serif; font-weight:900;
+      font-size:1.8rem; line-height:1.05; letter-spacing:-.03em;
+      margin-bottom:14px; color:var(--ti);
+    }
+    .rep-side > p { font-size:.78rem; color:var(--ti3); line-height:1.7; font-weight:300; margin-bottom:24px; }
+    .rep-btns { display:flex; flex-direction:column; gap:8px; }
+    .btn {
+      display:flex; align-items:center; justify-content:center;
+      padding:10px 18px; border-radius:6px; font-size:.76rem; font-weight:600;
+      cursor:pointer; border:none; font-family:inherit;
+      text-decoration:none; transition:all .2s; letter-spacing:.03em;
+    }
+    .btn-metal { background:var(--metal); color:var(--d); }
+    .btn-metal:hover { background:var(--ti); }
+    .btn-ghost { background:transparent; color:var(--ti3); border:1px solid var(--lni); }
+    .btn-ghost:hover { border-color:var(--metal); color:var(--ti); }
+    .rep-meta { margin-top:24px; padding-top:18px; border-top:1px solid var(--lni); font-size:.68rem; color:var(--ti3); line-height:1.9; }
+    .rep-thumbs { display:flex; gap:6px; margin-top:18px; }
+    .rep-thumbs img {
+      width:33%; aspect-ratio:4/3; object-fit:cover;
+      border-radius:4px;
+    }
+    /* PDF floats as a card on the dark background */
+    .rep-pdf {
+      flex:1; position:relative; background:var(--w1);
+      margin:7vh 6vw 7vh 4vw; max-width:75vw;
+      border-radius:12px; overflow:hidden;
+      box-shadow:0 30px 80px rgba(0,0,0,0.5);
+    }
+    .rep-pdf iframe { width:100%; height:100%; border:none; display:block; }
+    .rep-cap {
+      position:absolute; top:0; left:0; right:0; height:48px; z-index:10; cursor:pointer;
+      background:linear-gradient(to bottom,rgba(245,245,247,.6),transparent);
+    }
+
+    /* ═════════════════════════════════════════════════
+       FOOTER  (80vw, dark)
+    ═════════════════════════════════════════════════ */
+    .s-foot {
+      flex-shrink:0; width:80vw; height:100vh;
+      background:var(--d1); color:var(--ti);
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      text-align:center; position:relative; overflow:hidden;
+    }
+    .foot-title {
+      font-family:'Montserrat',sans-serif; font-weight:900; font-style:italic;
+      font-size:clamp(3rem,7vw,6rem); letter-spacing:-.04em; line-height:.9;
+      margin-bottom:32px; position:relative; z-index:2;
+    }
+    .foot-meta { font-size:.74rem; color:var(--ti3); line-height:2.0; position:relative; z-index:2; }
+    .foot-names { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-top:10px; font-size:.7rem; color:var(--ti3); }
+
+    /* ─── Mobile: vertical fallback ──────────────────── */
+    @media(max-width:768px){
+      html,body{overflow:auto;}
+      #vp{position:static;overflow:visible;}
+      #track{flex-direction:column;height:auto;width:100%!important;transform:none!important;}
+      .sec,.s-ack,.s-foot{width:100%;height:auto;min-height:100vh;flex-direction:column;}
+      .s-wave{min-height:100vh;}
+      .wave-start,.wave-title,.wave-sub{position:static;transform:none;max-width:100%;padding:24px;}
+      .intro-in{flex-direction:column;padding:60px 24px;}
+      .vw{flex:none;width:100%;height:60vh;}
+      .s-stage{flex-direction:column;}
+      #heroCtl{display:none;}
+      .s-team{flex-direction:column;}
+      .team-wheel-vp{perspective:none;min-height:auto;padding:40px 24px;}
+      .tm{position:static;transform:none!important;opacity:1!important;
+          filter:none!important;visibility:visible!important;margin-bottom:44px;}
+      .team-scroll-hint{display:none;}
+      .des-l,.des-specs,.des-imgs{flex:none;width:100%;}
+      .des-imgs{flex-direction:column;padding:32px 24px;}
+      .des-fig img{width:100%;}
+      .s-gallery{flex-direction:column;padding:60px 24px;gap:32px;}
+      .gal-intro{width:100%;}
+      .gal-fig{margin-top:0!important;}
+      .gal-lg img,.gal-md img,.gal-sm img{width:100%;height:auto;}
+      .s-results{flex-direction:column;padding:60px 24px;background:var(--d1);}
+      .res-col{max-height:none;width:100%;}
+      .s-report{background:var(--d1);}
+      .rep-side{flex:none;width:100%;margin-left:0;padding:60px 24px;}
+      .rep-pdf{max-width:none;}
+      .rep-pdf{flex:none;width:auto;height:70vh;margin:0 24px 40px;}
+      .ack-grid{grid-template-columns:1fr;}
+      nav .nav-items{display:none;}
+      #hint,#wave,.wave-hud{display:none;}
+      .px{transform:none!important;}
+    }
+  </style>
+</head>
+<body>
+
+<!-- Fixed sine-wave canvas -->
+<canvas id="wave"></canvas>
+
+<!-- Liquid glass tone controls (hero only) -->
+<div id="heroCtl">
+  <div class="glass freq-ctl">
+    <span class="freq-lbl">10 Hz</span>
+    <input type="range" id="freqSlider" min="0" max="100" value="56.5" step="0.1" aria-label="Tone frequency" />
+    <span class="freq-lbl">2 kHz</span>
+    <div class="freq-read" id="freqVal">1.00 kHz</div>
+  </div>
+  <button id="sndBtn" class="glass" aria-pressed="false">
+    <span class="dot"></span><span id="sndLbl">Sound Off</span>
+  </button>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <button class="nav-logo" id="homeBtn" style="background:none;border:none;cursor:pointer;padding:0;">Noise Deleter</button>
+  <div class="nav-right">
+    <ul class="nav-items">
+      <li><button data-g="1">Overview</button></li>
+      <li><button data-g="2">Problem</button></li>
+      <li><button data-g="3">Team</button></li>
+      <li><button data-g="4">Device</button></li>
+      <li><button data-g="7">Results</button></li>
+      <li><button data-g="9">Report</button></li>
+    </ul>
+  </div>
+</nav>
+<div id="prog"><div id="pf"></div></div>
+<div id="ctr">01 / 09</div>
+<div id="hint">Scroll to explore</div>
+
+<!-- TRACK -->
+<div id="vp"><div id="track">
+
+  <!-- 0. HERO WAVE ───────────────────────────────────── -->
+  <div class="sec lt1 s-wave" data-sec="0" data-lbl="01 / 09">
+    <div class="wave-start px" data-spd="0.82">
+      <p class="eyebrow">ECE 499 Capstone &mdash; Group 17 &mdash; University of Victoria</p>
+      <p>This is a 1 kHz tone. Keep scrolling to delete it.</p>
+    </div>
+    <div class="wave-title px" data-spd="0.94">
+      <div class="display"><span>Noise</span> <span class="dim">Deleter</span></div>
+    </div>
+    <div class="wave-sub px" data-spd="0.88">
+      <p>An adaptive active noise cancellation system that suppresses harmful
+      noise at a defined listening position — an eight-driver phased array,
+      the FxLMS algorithm, and a fully custom PCB.</p>
+    </div>
+  </div>
+
+  <!-- 1. INTRO / STATS ───────────────────────────────── -->
+  <div class="sec lt s-intro" data-sec="1" data-lbl="02 / 09">
+    <span class="ghost px" data-spd="0.52" style="font-size:38vw; left:-8vw; bottom:-8vw;">SILENCE</span>
+    <div class="intro-in">
+      <div class="intro-l">
+        <img src="img/device-array.png" alt="Noise Deleter speaker array" data-r />
+      </div>
+      <div class="intro-r">
+        <div class="display px" data-spd="1.03" id="introTitle">
+          <div class="cr-wrap"><span class="cr">Anti-noise,</span></div>
+          <div class="cr-wrap"><span class="cr d1 dim">aimed.</span></div>
+        </div>
+        <p class="lead px" data-spd="1.0" data-r>
+          Eight drivers act as a phased array, steering a beam of destructive
+          interference at the listener. A feedback microphone at the listening
+          position closes the loop, and the FxLMS algorithm adapts in real time.
+        </p>
+        <div class="hero-stats px" data-spd="0.99" data-r data-r-d="1">
+          <div class="stat"><div class="stat-v">8</div><div class="stat-l">Speaker drivers</div></div>
+          <div class="stat"><div class="stat-v">15 dB</div><div class="stat-l">Target reduction</div></div>
+          <div class="stat"><div class="stat-v">2 kHz</div><div class="stat-l">Target frequency</div></div>
+          <div class="stat"><div class="stat-v">&lt;10 W</div><div class="stat-l">Power budget</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. PROBLEM ─────────────────────────────────────── -->
+  <div class="sec lt1 s-problem" data-sec="2" data-lbl="03 / 09">
+    <span class="ghost px" data-spd="0.48" style="font-size:42vw; left:34vw; top:-7vw;">NOISE</span>
+    <div class="prob-l">
+      <p class="eyebrow px" data-spd="0.92">Background</p>
+      <div class="display big-q px" data-spd="1.05" id="bqTitle">
+        <div class="cr-wrap"><span class="cr">Noise is</span></div>
+        <div class="cr-wrap"><span class="cr d1">a public</span></div>
+        <div class="cr-wrap"><span class="cr d2 dim2">health crisis.</span></div>
+      </div>
+      <p class="prob-body px" data-spd="0.97" data-r>
+        Noise pollution in professional settings negatively affects quality of life
+        for people with sensory processing conditions, and causes irreversible hearing
+        damage to workers in construction, industrial, and generator environments.
+        <br><br>
+        Passive barriers fail at low frequencies. Consumer headphones protect only one
+        listener. Laboratory ANC systems demand high channel counts and significant
+        infrastructure. The Noise Deleter bridges the gap: commodity hardware,
+        self-contained, under 10 W.
+      </p>
+    </div>
+    <div class="prob-r">
+      <div class="issue px" data-spd="1.03" data-r>
+        <h4>Sensory-Sensitive Individuals</h4>
+        <p>Everyday noise in care facilities causes significant distress for people with sensory processing disorders.</p>
+      </div>
+      <div class="issue px" data-spd="1.06" data-r data-r-d="1">
+        <h4>Occupational Hearing Damage</h4>
+        <p>Workers at construction and industrial sites are exposed to noise exceeding safe thresholds, causing permanent loss.</p>
+      </div>
+      <div class="issue px" data-spd="1.09" data-r data-r-d="2">
+        <h4>EGBC Code of Ethics &mdash; Guideline 1</h4>
+        <p>Hold paramount the safety, health, and welfare of the public and the promotion of health and safety in the workplace.</p>
+      </div>
+      <div class="issue px" data-spd="1.12" data-r data-r-d="3">
+        <h4>No Practical Middle Ground</h4>
+        <p>Existing solutions are either too limited (headphones, foam) or too complex and expensive (lab-grade spatial ANC) for real deployment.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. TEAM ────────────────────────────────────────── -->
+  <div class="sec lt s-team" data-sec="3" data-lbl="04 / 09">
+    <div class="team-l">
+      <p class="eyebrow">The Team</p>
+      <div class="display team-h" id="teamTitle">
+        <div class="cr-wrap"><span class="cr">Group</span></div>
+        <div class="cr-wrap"><span class="cr d1 dim">17</span></div>
+      </div>
+      <p class="team-desc" data-r>
+        Five electrical engineering students from the University of Victoria.
+        Each member owned a distinct subsystem from concept through testing.
+        <br><br>
+        Faculty Supervisor<br>
+        <strong>Dr. Peter Driessen</strong><br>
+        Dept. of ECE, UVic
+      </p>
+    </div>
+    <div class="team-wheel-vp" id="teamVp">
+      <div class="tm">
+        <div class="tm-role">Faculty Supervisor</div>
+        <div class="tm-name">Dr. Peter<br>Driessen</div>
+        <div class="tm-sys">Department of Electrical &amp; Computer Engineering — University of Victoria</div>
+      </div>
+      <div class="tm">
+        <div class="tm-role">Project Manager</div>
+        <div class="tm-name">Sophie<br>Gander</div>
+        <div class="tm-sys">Hardware Integration — Speaker Amplifier System, PCB Bring-up &amp; Testing</div>
+      </div>
+      <div class="tm">
+        <div class="tm-role">Integration Lead</div>
+        <div class="tm-name">Karnika<br>Sitolay</div>
+        <div class="tm-sys">HW / FW / SW — TDM Output, System Integration, Parameter Tuning</div>
+      </div>
+      <div class="tm">
+        <div class="tm-role">Software Lead</div>
+        <div class="tm-name">Benjamin<br>Blake</div>
+        <div class="tm-sys">DSP &amp; Firmware — FxLMS Algorithm, I&sup2;S Interface, Architecture</div>
+      </div>
+      <div class="tm">
+        <div class="tm-role">Hardware Lead</div>
+        <div class="tm-name">Nicholas<br>Guildford</div>
+        <div class="tm-sys">PCB Design — Microcontroller, Power Supply, Amplifiers, Microphones</div>
+      </div>
+      <div class="tm">
+        <div class="tm-role">Physical Structure Lead</div>
+        <div class="tm-name">Finn<br>Berg</div>
+        <div class="tm-sys">Enclosures — CAD Design, 3D Printing, Speaker Array Mounting</div>
+      </div>
+      <div class="team-scroll-hint" id="teamHint">
+        <span>Scroll</span>
+        <span class="arr">&#x2193;</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. STAGE — viewers ─────────────────────────────── -->
+  <div class="sec lt s-stage" data-sec="4" data-lbl="05 / 09">
+    <div class="vw" id="vw1">
+      <div class="vw-label">360&deg; View</div>
+      <div class="vw-inner" id="vi1">
+        <iframe src="turntable.html" title="360-degree interactive view" scrolling="no"></iframe>
+      </div>
+      <div class="vw-cap" id="cap1"></div>
+      <div class="vw-hint">Click &amp; drag to rotate</div>
+    </div>
+    <div class="vw" id="vw2">
+      <div class="vw-label">Interior Components</div>
+      <div class="vw-inner" id="vi2">
+        <iframe src="turntable-dissected.html" title="Exploded component view" scrolling="no"></iframe>
+      </div>
+      <div class="vw-cap" id="cap2"></div>
+      <div class="vw-hint">Click &amp; drag to explore</div>
+    </div>
+  </div>
+
+  <!-- 5. DESIGN ──────────────────────────────────────── -->
+  <div class="sec lt1 s-design" data-sec="5" data-lbl="06 / 09">
+    <span class="ghost px" data-spd="0.50" style="font-size:34vw; left:60vw; bottom:-6vw;">DESIGN</span>
+    <div class="des-l">
+      <p class="eyebrow px" data-spd="0.92">Design</p>
+      <div class="display big-q px" data-spd="1.05" id="desTitle" style="font-size:clamp(2rem,3.5vw,3.2rem);margin-bottom:28px;">
+        <div class="cr-wrap"><span class="cr">System</span></div>
+        <div class="cr-wrap"><span class="cr d1 dim">Architecture</span></div>
+      </div>
+      <p class="px" data-spd="0.97" data-r style="font-size:.84rem;color:var(--t2);line-height:1.75;font-weight:300;max-width:380px;">
+        Four interdependent subsystems — software, hardware, firmware, and enclosure —
+        designed and validated independently before closed-loop integration.
+      </p>
+    </div>
+    <div class="des-specs">
+      <div class="spec-row" data-r>
+        <h4>Eight-Driver Speaker Array</h4>
+        <p>Eight Dayton Audio CE32A-4 drivers (32 mm) spaced 4.3 cm apart. At 2 kHz the array is ~1.5 wavelengths long, producing a beam half-power width of approximately 34 degrees.</p>
+      </div>
+      <div class="spec-row" data-r data-r-d="1">
+        <h4>FxLMS Adaptive Controller</h4>
+        <p>One complex weight per speaker (8 total) updated every sample at 48 kHz. The FxLMS rule adjusts each weight in the direction that minimizes the error microphone signal, scaled by the measured secondary path.</p>
+      </div>
+      <div class="spec-row" data-r data-r-d="2">
+        <h4>Fully Custom PCB</h4>
+        <p>All amplifier, microphone, microcontroller, and power-supply circuits on one board. Careful trace and via design minimizes EMI between Class-D amplifier outputs and sensitive MEMS microphone inputs.</p>
+      </div>
+      <div class="spec-row" data-r data-r-d="3">
+        <h4>Closed-Loop Acoustic Feedback</h4>
+        <p>Reference mic near the disturbance source and error mic at the listening position feed back into the adaptive controller via I&sup2;S, continuously driving residual error toward zero.</p>
+      </div>
+      <div class="spec-row" data-r data-r-d="4">
+        <h4>3D-Printed Enclosure</h4>
+        <p>Custom enclosure designed in CAD and manufactured in-house. Houses the speaker array, PCB, wire routing channels, and a separate mount for the feedback microphone.</p>
+      </div>
+    </div>
+    <div class="des-imgs">
+      <figure class="des-fig px" data-spd="0.96" data-r>
+        <img src="img/device-front.png" alt="Front view of the Noise Deleter device" />
+        <figcaption>01 &mdash; Assembled Device</figcaption>
+      </figure>
+      <figure class="des-fig px" data-spd="1.04" data-r data-r-d="2" style="margin-top:10vh;">
+        <img src="img/device-exploded.png" alt="Exploded component view" />
+        <figcaption>02 &mdash; Exploded Assembly</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <!-- 6. GALLERY — prototype photos ──────────────────── -->
+  <div class="sec lt s-gallery" data-sec="6" data-lbl="07 / 09">
+    <span class="ghost px" data-spd="0.50" style="font-size:30vw; left:60vw; top:-4vw;">PROTOTYPE</span>
+    <div class="gal-intro px" data-spd="0.95">
+      <p class="eyebrow">The Prototype</p>
+      <div class="display" id="galTitle" style="font-size:clamp(2rem,3.4vw,3.2rem);margin-bottom:24px;">
+        <div class="cr-wrap"><span class="cr">Built,</span></div>
+        <div class="cr-wrap"><span class="cr d1 dim">for real.</span></div>
+      </div>
+      <p style="font-size:.84rem;color:var(--t2);line-height:1.75;font-weight:300;">
+        From CAD to bench to the field — the finished device, its machined-look
+        3D-printed enclosure, and the wiring that brought it to life.
+      </p>
+    </div>
+    <figure class="gal-fig gal-sm px" data-spd="0.96" data-r style="margin-top:12vh;">
+      <img src="img/photo-breadboard.jpg" alt="Early breadboard prototype with eight drivers" />
+      <figcaption>01 &mdash; Breadboard prototype</figcaption>
+    </figure>
+    <figure class="gal-fig gal-md px" data-spd="1.04" data-r style="margin-top:-12vh;">
+      <img src="img/photo-pcb.jpg" alt="Noise Deleter v1 custom PCB" />
+      <figcaption>02 &mdash; Custom PCB, v1</figcaption>
+    </figure>
+    <figure class="gal-fig gal-md px" data-spd="0.97" data-r style="margin-top:10vh;">
+      <img src="img/photo-build.jpg" alt="Assembly and integration work" />
+      <figcaption>03 &mdash; Assembly &amp; integration</figcaption>
+    </figure>
+    <figure class="gal-fig gal-sm px" data-spd="1.05" data-r style="margin-top:-14vh;">
+      <img src="img/photo-lab.jpg" alt="Bench testing in the ECE 499 lab" />
+      <figcaption>04 &mdash; Bench testing</figcaption>
+    </figure>
+    <figure class="gal-fig gal-lg px" data-spd="0.97" data-r>
+      <img src="img/photo-front.jpg" alt="Finished Noise Deleter device, front view" />
+      <figcaption>05 &mdash; The finished device</figcaption>
+    </figure>
+    <figure class="gal-fig gal-md px" data-spd="1.04" data-r style="margin-top:-12vh;">
+      <img src="img/photo-top.jpg" alt="Top view showing USB-C connectivity" />
+      <figcaption>06 &mdash; Top deck &amp; USB-C</figcaption>
+    </figure>
+    <figure class="gal-fig gal-lg px" data-spd="0.98" data-r>
+      <img src="img/photo-grass.jpg" alt="Noise Deleter in the field" />
+      <figcaption>07 &mdash; In the field</figcaption>
+    </figure>
+  </div>
+
+  <!-- 7. RESULTS ─────────────────────────────────────── -->
+  <div class="sec s-results" data-sec="7" data-lbl="08 / 09">
+    <span class="ghost inv px" data-spd="0.50" style="font-size:32vw; left:70vw; top:-5vw;">RESULTS</span>
+    <div class="res-col res-col-title">
+      <p class="eyebrow inv px" data-spd="0.94">Results &amp; Findings</p>
+      <div class="display big-q px" data-spd="1.04" id="resTitle"
+           style="font-size:clamp(2rem,3.5vw,3.4rem);margin-bottom:24px;color:var(--ti);">
+        <div class="cr-wrap"><span class="cr">What</span></div>
+        <div class="cr-wrap"><span class="cr d1" style="color:var(--ti3);">We Built</span></div>
+      </div>
+      <p data-r style="font-size:.84rem;color:var(--ti3);line-height:1.75;font-weight:300;max-width:360px;">
+        Four staged milestones, ten validation tests, and a working
+        adaptive canceller — here is where the project landed.
+      </p>
+    </div>
+    <div class="res-col">
+      <div class="ms-list">
+        <div class="ms" data-r>
+          <div class="ms-n">01</div>
+          <div class="ms-body">
+            <h4>Peripheral Interfacing</h4>
+            <p>Measured input tone and played a matching tone. Verified I&sup2;S interfacing of all system peripherals and basic DSP function.</p>
+            <span class="ms-status">Passed</span>
+          </div>
+        </div>
+        <div class="ms" data-r data-r-d="1">
+          <div class="ms-n">02</div>
+          <div class="ms-body">
+            <h4>Single Tone Cancellation</h4>
+            <p>Cancelled a single input tone, demonstrating destructive waveform generation and measurable attenuation at the error microphone.</p>
+            <span class="ms-status">Achieved</span>
+          </div>
+        </div>
+        <div class="ms" data-r data-r-d="2">
+          <div class="ms-n">03</div>
+          <div class="ms-body">
+            <h4>Predictable Tone Sequence</h4>
+            <p>Partially achieved. Active waveform generation demonstrated; constrained by available testing time after PCB arrival.</p>
+            <span class="ms-status" style="color:var(--ti3);">Partial</span>
+          </div>
+        </div>
+        <div class="ms" data-r data-r-d="3">
+          <div class="ms-n">04</div>
+          <div class="ms-body">
+            <h4>Complex Broadband Cancellation</h4>
+            <p>Requires automatic frequency estimation and multi-tone tracking — planned for the next development stage.</p>
+            <span class="ms-status" style="color:var(--ti3);opacity:.5;">Future Work</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="res-col">
+      <h3 style="font-size:.62rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--metal);margin-bottom:14px;" data-r>Validation Results</h3>
+      <table class="test-tbl" data-r data-r-d="1">
+        <thead><tr><th>Test</th><th>Purpose</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td>Single speaker output</td><td>Amplifier comms</td><td class="pass">Pass</td></tr>
+          <tr><td>Sequential tone gen.</td><td>Channel mapping</td><td class="pass">Pass</td></tr>
+          <tr><td>Microphone input</td><td>I&sup2;S mic operation</td><td class="pass">Pass</td></tr>
+          <tr><td>TDM amplifier output</td><td>Multi-speaker audio</td><td class="pass">Pass</td></tr>
+          <tr><td>Stereo mic configuration</td><td>L/R addressing</td><td class="pass">Pass</td></tr>
+          <tr><td>Echo machine loopback</td><td>Full audio pipeline</td><td class="pass">Pass</td></tr>
+          <tr><td>PCB power rails</td><td>5 V and 3.3 V supply</td><td class="pass">Pass</td></tr>
+          <tr><td>FxLMS convergence</td><td>Adaptive stability</td><td class="pass">Pass</td></tr>
+          <tr><td>Divergence recovery</td><td>Fault detection &amp; mute</td><td class="pass">Pass</td></tr>
+          <tr><td>15 dB target</td><td>Full objective</td><td class="partial">Partial</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="res-col">
+      <div class="info-box" data-r>
+        <h5>Key Findings</h5>
+        <ul>
+          <li>Secondary-path phase accuracy is critical — errors beyond ~90&deg; cause divergence</li>
+          <li>I&sup2;S constraints limited design to one reference + one error microphone</li>
+          <li>System autonomously recovered from instability via divergence detection</li>
+          <li>Acoustic reflections and coupling were the primary performance ceiling</li>
+        </ul>
+      </div>
+      <div class="info-box" data-r data-r-d="2" style="margin-top:20px;">
+        <h5>Future Improvements</h5>
+        <ul>
+          <li>Automatic frequency estimation — remove fixed 2 kHz assumption</li>
+          <li>Multi-tone simultaneous cancellation via concurrent adaptive filters</li>
+          <li>TDM-capable microphones for additional spatial error sensors</li>
+          <li>On-device secondary-path measurement to eliminate calibration errors</li>
+          <li>Adaptive beam steering to follow listener position in real time</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. ACKNOWLEDGMENTS ─────────────────────────────── -->
+  <div class="sec lt s-ack" data-sec="8" data-lbl="09 / 09">
+    <span class="ghost px" data-spd="0.52" style="font-size:28vw; left:36vw; bottom:-4vw;">THANKS</span>
+    <div class="ack-head">
+      <div>
+        <p class="eyebrow px" data-spd="0.92">Acknowledgments</p>
+        <div class="display big-q px" data-spd="1.04" id="ackTitle" style="font-size:clamp(2rem,3.5vw,3.2rem);">
+          <div class="cr-wrap"><span class="cr">With</span></div>
+          <div class="cr-wrap"><span class="cr d1 dim">Gratitude</span></div>
+        </div>
+      </div>
+      <p>The Noise Deleter would not have been possible without the support of the following people and organizations.</p>
+    </div>
+    <div class="ack-grid">
+      <div class="ack-item" data-r><div class="ack-for">Faculty Supervisor</div><h4>Dr. Peter Driessen</h4><p>Expert advice on project methodology and active noise control theory throughout the term.</p></div>
+      <div class="ack-item" data-r data-r-d="1"><div class="ack-for">Project Guidance</div><h4>Niloofar Tavahoodi</h4><p>Consistent mentorship and project guidance throughout the capstone term.</p></div>
+      <div class="ack-item" data-r data-r-d="2"><div class="ack-for">Technical Assistance</div><h4>Asif Ali</h4><p>Hands-on technical assistance at critical stages of the project development.</p></div>
+      <div class="ack-item" data-r data-r-d="1"><div class="ack-for">Financial Support</div><h4>Dr. Michael McGuire &amp; ECE Dept.</h4><p>Financial support enabling the custom PCB, speaker components, and test equipment.</p></div>
+      <div class="ack-item" data-r data-r-d="2"><div class="ack-for">Course Facilitation</div><h4>Dr. Sana Shuja</h4><p>ECE 499 class facilitation and guidance provided to the team throughout the year.</p></div>
+      <div class="ack-item" data-r data-r-d="3"><div class="ack-for">PCB Manufacturing</div><h4>JLC PCB</h4><p>Timely manufacturing and reliable delivery of the team's custom printed circuit board.</p></div>
+      <div class="ack-item" data-r><div class="ack-for">Equipment &amp; Supplies</div><h4>UVic Formula Racing Team</h4><p>Generously loaned consumable supplies and testing equipment throughout the project.</p></div>
+      <div class="ack-item" data-r data-r-d="1"><div class="ack-for">Lab Space</div><h4>Brent Sirna</h4><p>Facilitated the ECE 499 lab space and kept it accessible for the team throughout the project.</p></div>
+      <div class="ack-item" data-r data-r-d="2"><div class="ack-for">Personal Support</div><h4>Family &amp; Friends</h4><p>Patience and encouragement that sustained the team through a demanding capstone year.</p></div>
+    </div>
+  </div>
+
+  <!-- 9. FINAL REPORT ────────────────────────────────── -->
+  <div class="sec s-report" data-sec="9" data-lbl="">
+    <div class="rep-side">
+      <p class="eyebrow inv">Final Report</p>
+      <h2>ECE 499<br>Final<br>Report</h2>
+      <p>Complete technical documentation covering design specifications, hardware and software methodology, testing results, and conclusions.</p>
+      <div class="rep-btns">
+        <a href="final-report.pdf" download class="btn btn-metal">Download PDF</a>
+        <a href="final-report.pdf" target="_blank" class="btn btn-ghost">Open in new tab</a>
+      </div>
+      <div class="rep-thumbs">
+        <img src="img/photo-front.jpg" alt="Finished device" style="object-fit:cover;" />
+        <img src="img/photo-grass.jpg" alt="Device in the field" style="object-fit:cover;" />
+        <img src="img/photo-top.jpg"   alt="Top deck view" style="object-fit:cover;" />
+      </div>
+      <div class="rep-meta">Group 17 &mdash; ECE 499<br>University of Victoria<br>August 2026</div>
+    </div>
+    <div class="rep-pdf">
+      <iframe id="repFrame" src="final-report.pdf" title="ECE 499 Final Report"></iframe>
+      <div class="rep-cap" id="repCap"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER ─────────────────────────────────────────── -->
+  <div class="s-foot">
+    <span class="ghost inv px" data-spd="0.55" style="font-size:24vw; left:-6vw; top:4vw;">GROUP 17</span>
+    <div class="foot-title">
+      <span>Noise</span><span class="dim">Deleter</span>
+    </div>
+    <div class="foot-meta">
+      ECE 499 Capstone &mdash; Group 17<br>
+      University of Victoria &middot; Dept. of Electrical &amp; Computer Engineering &middot; 2026
+      <div class="foot-names">
+        <span>Sophie Gander</span><span>Karnika Sitolay</span>
+        <span>Nicholas Guildford</span><span>Benjamin Blake</span><span>Finn Berg</span>
+      </div>
+    </div>
+  </div>
+
+</div></div><!-- /track /vp -->
+
+<script>
+(function(){
+'use strict';
+
+/* ── Elements ─────────────────────────────────────── */
+const track    = document.getElementById('track');
+const pf       = document.getElementById('pf');
+const ctr      = document.getElementById('ctr');
+const hint     = document.getElementById('hint');
+const nav      = document.getElementById('nav');
+const teamHint = document.getElementById('teamHint');
+const vi1 = document.getElementById('vi1'), vw1 = document.getElementById('vw1');
+const vi2 = document.getElementById('vi2'), vw2 = document.getElementById('vw2');
+const repCap   = document.getElementById('repCap');
+const teamSec  = document.querySelector('.s-team');
+const waveSec  = document.querySelector('.s-wave');
+const canvas   = document.getElementById('wave');
+const cnv      = canvas.getContext('2d');
+const heroCtl  = document.getElementById('heroCtl');
+const freqVal  = document.getElementById('freqVal');
+const freqSlider = document.getElementById('freqSlider');
+const sndBtn   = document.getElementById('sndBtn');
+const sndLbl   = document.getElementById('sndLbl');
+const tmEls    = [...document.querySelectorAll('.tm')];
+
+/* ── Scroll state ─────────────────────────────────── */
+/* Slower scroll: lower multiplier + gentler easing */
+let tx = 0, cx = 0, maxScroll = 0;
+let vpW = window.innerWidth, vpH = window.innerHeight;
+const EASE = 0.058, MULT = 0.62;
+
+/* ── Team wheel state ─────────────────────────────── */
+/* Each member gets a dedicated scroll "slot" of STEP px */
+const STEP = 340;
+let teamVY = 0, maxTeamVY = (tmEls.length - 1) * STEP;
+
+/* ── Parallax registry ────────────────────────────── */
+let pxEls = [];
+function buildParallax(){
+  pxEls = [...document.querySelectorAll('.px')].map(el=>({
+    el, spd: parseFloat(el.dataset.spd || '1'),
+    sec: el.closest('.sec') || el.closest('.s-foot')
+  })).filter(o=>o.sec && o.spd !== 1);
+}
+
+/* ── Measure ──────────────────────────────────────── */
+let heroW = 0;
+function measure(){
+  vpW = window.innerWidth; vpH = window.innerHeight;
+  maxScroll = Math.max(0, track.scrollWidth - vpW);
+  heroW = waveSec ? waveSec.offsetWidth : vpW * 3.2;
+  canvas.width  = vpW * (window.devicePixelRatio||1);
+  canvas.height = vpH * (window.devicePixelRatio||1);
+  canvas.style.width = vpW+'px'; canvas.style.height = vpH+'px';
+  cnv.setTransform(window.devicePixelRatio||1,0,0,window.devicePixelRatio||1,0,0);
+}
+window.addEventListener('resize', measure);
+
+function clamp(v,lo,hi){ return Math.max(lo,Math.min(v,hi)); }
+
+/* ── Audio: variable tone (10 Hz – 2 kHz) ─────────── */
+let audioCtx=null, osc=null, oscGain=null, soundOn=false;
+let freq = 1000; /* Hz */
+function initAudio(){
+  if(audioCtx) return;
+  try{
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    osc = audioCtx.createOscillator();
+    osc.type='sine'; osc.frequency.value=freq;
+    oscGain = audioCtx.createGain(); oscGain.gain.value=0;
+    osc.connect(oscGain); oscGain.connect(audioCtx.destination);
+    osc.start();
+  }catch(e){ audioCtx=null; }
+}
+function fmtFreq(f){
+  return f>=1000 ? (f/1000).toFixed(2).replace(/\.?0+$/,'')+' kHz'
+                 : Math.round(f)+' Hz';
+}
+/* log slider: 0 → 10 Hz, 100 → 2000 Hz */
+function sliderToFreq(v){ return 10*Math.pow(200, v/100); }
+function syncFreq(){
+  freq = sliderToFreq(parseFloat(freqSlider.value));
+  freqVal.textContent = fmtFreq(freq);
+  if(osc && audioCtx) osc.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.03);
+}
+freqSlider.addEventListener('input', syncFreq);
+syncFreq();
+
+sndBtn.addEventListener('click',()=>{
+  soundOn = !soundOn;
+  sndBtn.classList.toggle('on', soundOn);
+  sndBtn.setAttribute('aria-pressed', soundOn?'true':'false');
+  sndLbl.textContent = soundOn ? 'Sound On' : 'Sound Off';
+  if(soundOn){ initAudio(); if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume(); }
+});
+function setToneLevel(amp){
+  if(!audioCtx||!oscGain) return;
+  const target = soundOn ? amp*0.045 : 0;
+  oscGain.gain.setTargetAtTime(target, audioCtx.currentTime, 0.08);
+}
+
+/* ── Wave rendering ───────────────────────────────── */
+/* amp: 1 at start, decays to 0 (flat line) by ~55% of the hero.
+   No amplitude bobbing — the wave simply travels at a speed
+   proportional to its frequency. */
+let wavePhase = 0, lastCx = 0, lastT = 0;
+function heroAmp(){
+  const flattenEnd = heroW * 0.52;
+  return clamp(1 - cx/flattenEnd, 0, 1);
+}
+function heroFade(){
+  const exitStart = heroW - vpW;
+  return clamp(1 - (cx - exitStart)/(vpW*0.55), 0, 1);
+}
+function drawWave(t){
+  const dt = lastT ? Math.min((t-lastT)/1000, 0.05) : 0.016;
+  lastT = t;
+  const fade = heroFade();
+  heroCtl.style.opacity = fade;
+  heroCtl.style.pointerEvents = fade>0.05 ? 'auto' : 'none';
+  if(fade<=0){ canvas.style.display='none'; setToneLevel(0); return; }
+  canvas.style.display='block';
+  cnv.clearRect(0,0,vpW,vpH);
+
+  const amp = heroAmp();
+  const A   = amp * vpH * 0.20;
+  const mid = vpH/2;
+  /* wavelengths on screen scale with frequency (log): 10 Hz → ~1.2, 2 kHz → ~8 */
+  const cycles = 1.2 + 6.8 * (Math.log10(freq/10) / Math.log10(200));
+  const k = (Math.PI*2*cycles)/vpW;
+  /* travel speed proportional to frequency: 10 Hz crawls, 2 kHz flies */
+  wavePhase += (2.4 + freq*0.066) * dt + (cx-lastCx)*0.004;
+  lastCx = cx;
+
+  const layers = [
+    { a:1.00, ph:0,    w:2, col:`rgba(29,29,31,${0.9*fade})`  },
+    { a:0.55, ph:1.1,  w:1, col:`rgba(142,142,147,${0.45*fade})` },
+    { a:0.30, ph:2.3,  w:1, col:`rgba(142,142,147,${0.22*fade})` },
+  ];
+  layers.forEach(L=>{
+    cnv.beginPath();
+    cnv.lineWidth=L.w;
+    cnv.strokeStyle=L.col;
+    for(let x=0;x<=vpW;x+=2){
+      const y = mid + A*L.a*Math.sin(k*x - wavePhase - L.ph);
+      if(x===0) cnv.moveTo(x,y); else cnv.lineTo(x,y);
+    }
+    cnv.stroke();
+  });
+
+  setToneLevel(amp);
+}
+
+/* ── Wheel ────────────────────────────────────────── */
+function teamInView(){
+  if(!teamSec) return false;
+  const r = teamSec.getBoundingClientRect();
+  return r.left <= vpW*0.15 && r.right >= vpW*0.85;
+}
+function onWheel(e){
+  e.preventDefault();
+  initAudio(); /* user gesture — safe to create ctx */
+  const delta = Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;
+  if(teamInView() && maxTeamVY>0){
+    const down = delta>0;
+    const atBot = teamVY>=maxTeamVY-2, atTop = teamVY<=2;
+    if((down&&!atBot)||(!down&&!atTop)){
+      teamVY=clamp(teamVY+delta*MULT,0,maxTeamVY); return;
+    }
+  }
+  tx = clamp(tx + delta*MULT, 0, maxScroll);
+}
+window.addEventListener('wheel', onWheel, {passive:false});
+
+/* ── Touch ────────────────────────────────────────── */
+let tX0=0,tY0=0;
+window.addEventListener('touchstart',e=>{tX0=e.touches[0].clientX;tY0=e.touches[0].clientY;},{passive:true});
+window.addEventListener('touchmove',e=>{
+  const dx=tX0-e.touches[0].clientX, dy=tY0-e.touches[0].clientY;
+  if(teamInView()&&Math.abs(dy)>Math.abs(dx)) teamVY=clamp(teamVY+dy,0,maxTeamVY);
+  else tx=clamp(tx+dx,0,maxScroll);
+  tX0=e.touches[0].clientX; tY0=e.touches[0].clientY;
+},{passive:true});
+
+/* ── Keyboard ─────────────────────────────────────── */
+window.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();tx=clamp(tx+vpW*0.5,0,maxScroll);}
+  if(e.key==='ArrowLeft' ||e.key==='ArrowUp')  {e.preventDefault();tx=clamp(tx-vpW*0.5,0,maxScroll);}
+});
+
+/* ── Nav goto ─────────────────────────────────────── */
+document.querySelectorAll('[data-g]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const secs=[...document.querySelectorAll('[data-sec]')];
+    const s=secs[parseInt(btn.dataset.g)];
+    if(s){ const r=s.getBoundingClientRect(); tx=clamp(cx+r.left,0,maxScroll); }
+  });
+});
+/* Logo → back to the very start */
+document.getElementById('homeBtn').addEventListener('click',()=>{
+  tx=0; teamVY=0;
+});
+
+/* ── Iframe caps ──────────────────────────────────── */
+const caps=[document.getElementById('cap1'),document.getElementById('cap2'),repCap].filter(Boolean);
+caps.forEach(cap=>{
+  cap.addEventListener('wheel',e=>{
+    e.stopPropagation();
+    const delta=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;
+    tx=clamp(tx+delta*MULT,0,maxScroll);
+  },{passive:false});
+  cap.addEventListener('mousedown',()=>{cap.style.pointerEvents='none';});
+});
+window.addEventListener('mouseup',()=>caps.forEach(c=>c.style.pointerEvents='auto'));
+
+/* ── Viewer rise/sink ─────────────────────────────── */
+function updateViewers(){
+  [[vw1,vi1],[vw2,vi2]].forEach(([wrap,inner])=>{
+    if(!wrap||!inner) return;
+    const r=wrap.getBoundingClientRect();
+    const norm=(r.left+r.width/2-vpW/2)/vpW;
+    let ty,op;
+    if(norm>1.2){ty=105;op=0;}
+    else if(norm>0){const p=1-norm;ty=(1-p)*100;op=Math.min(1,p*2);}
+    else if(norm>-1.2){const p=-norm;ty=-p*30;op=Math.max(0,1-p*1.5);}
+    else{ty=-40;op=0;}
+    inner.style.transform=`translateY(${ty}%)`;
+    inner.style.opacity=op;
+  });
+}
+
+/* ── Parallax drift ───────────────────────────────── */
+/* Always update every element (no culling) — stale transforms
+   from culled elements caused visible glitches/popping. */
+function updateParallax(){
+  for(const o of pxEls){
+    const r=o.sec.getBoundingClientRect();
+    const drift=clamp((vpW-r.left)*(1-o.spd)*0.55, -vpW, vpW);
+    o.el.style.transform=`translate3d(${drift.toFixed(1)}px,0,0)`;
+  }
+}
+
+/* ── Clip title reveals ───────────────────────────── */
+const clipIds=['introTitle','bqTitle','teamTitle','desTitle','galTitle','resTitle','ackTitle'];
+const clipped=new Set();
+function updateClips(){
+  clipIds.forEach(id=>{
+    if(clipped.has(id)) return;
+    const el=document.getElementById(id);
+    if(!el) return;
+    const r=el.getBoundingClientRect();
+    if(r.left<vpW*0.85&&r.right>0){
+      el.querySelectorAll('.cr').forEach(c=>c.classList.add('go'));
+      clipped.add(id);
+    }
+  });
+}
+
+/* ── Fade-up reveals ──────────────────────────────── */
+const revEls=[...document.querySelectorAll('[data-r]')];
+const revDone=new Set();
+function updateReveal(){
+  revEls.forEach(el=>{
+    if(revDone.has(el)) return;
+    const r=el.getBoundingClientRect();
+    if(r.left<vpW*0.88&&r.right>0){
+      const d=el.dataset.rD||'0';
+      el.classList.add('go');
+      if(d!=='0') el.classList.add('d'+d);
+      revDone.add(el);
+    }
+  });
+}
+
+/* ── Team 3D picker wheel (Apple style) ───────────── */
+function updateTeam(){
+  if(!tmEls.length) return;
+  const focus = teamVY / STEP;   /* fractional index of centered member */
+  tmEls.forEach((el,i)=>{
+    const off = i - focus;       /* 0 = centered */
+    const a   = Math.abs(off);
+    if(a > 2.6){ el.style.opacity='0'; el.style.visibility='hidden'; return; }
+    el.style.visibility='visible';
+    const rot   = clamp(off * -38, -80, 80);       /* wheel tilt */
+    const scale = 1 - Math.min(a*0.13, 0.4);
+    const op    = Math.max(0, 1 - a*0.55);
+    el.style.transform =
+      `translateY(-50%) translate3d(0, ${(off*34).toFixed(2)}vh, ${(-a*160).toFixed(1)}px) `+
+      `rotateX(${rot.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+    el.style.opacity = op.toFixed(3);
+    el.style.filter  = a>0.5 ? `blur(${((a-0.5)*2.2).toFixed(2)}px)` : 'none';
+  });
+  if(teamHint) teamHint.style.opacity=(teamVY>=maxTeamVY-4)?'0':'1';
+}
+
+/* ── Nav theme (dark section detection) ───────────── */
+function updateNav(){
+  /* Gradient sections have no backgroundColor, so detect dark
+     sections explicitly and respect their white fade edges. */
+  const el=document.elementFromPoint(vpW/2,vpH/2);
+  let dark=false;
+  if(el){
+    const sec=el.closest('.s-results,.s-report,.s-foot');
+    if(sec){
+      const r=sec.getBoundingClientRect();
+      const p=(vpW/2 - r.left)/r.width;
+      if(sec.classList.contains('s-results'))      dark = p>0.13 && p<0.87;
+      else if(sec.classList.contains('s-report'))  dark = p>0.20;
+      else                                         dark = true;
+    } else {
+      let e=el;
+      while(e&&e!==document.body){
+        const bg=getComputedStyle(e).backgroundColor;
+        if(bg&&bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent'){
+          const m=bg.match(/\d+/g);
+          if(m) dark=(0.299*m[0]+0.587*m[1]+0.114*m[2])<100;
+          break;
+        }
+        e=e.parentElement;
+      }
+    }
+  }
+  nav.classList.toggle('inv',dark);
+  ctr.classList.toggle('inv',dark);
+  hint.classList.toggle('inv',dark);
+}
+
+/* ── Counter + progress ───────────────────────────── */
+function updateCtr(){
+  const secs=[...document.querySelectorAll('[data-sec]')];
+  let cur=0;
+  secs.forEach((s,i)=>{ if(s.getBoundingClientRect().left<=vpW*0.5) cur=i; });
+  const lbl=secs[cur]?.dataset.lbl||'';
+  if(lbl) ctr.textContent=lbl;
+  pf.style.width=(maxScroll>0?(cx/maxScroll)*100:0)+'%';
+}
+
+/* ── RAF loop ─────────────────────────────────────── */
+let frame=0;
+function raf(t){
+  const diff=tx-cx;
+  cx+=Math.abs(diff)>0.1?diff*EASE:diff;
+  track.style.transform=`translateX(${-cx}px)`;
+  drawWave(t||0);
+  updateParallax();
+  updateViewers();
+  updateReveal();
+  updateClips();
+  updateTeam();
+  updateCtr();
+  if((frame++%12)===0) updateNav();
+  if(cx>120) hint.style.opacity='0';
+  requestAnimationFrame(raf);
+}
+
+/* ── Boot ─────────────────────────────────────────── */
+buildParallax();
+measure();
+requestAnimationFrame(raf);
+
+})();
+</script>
+</body>
+</html>
