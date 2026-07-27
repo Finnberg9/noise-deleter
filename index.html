@@ -254,12 +254,14 @@
     ═════════════════════════════════════════════════ */
     .s-intro { width:120vw; align-items:center; }
     .intro-in { display:flex; width:100%; padding:0 8vw; gap:6vw; align-items:center; }
-    .intro-l { flex:1.4; }
+    .intro-l { flex:1.9; display:flex; align-items:center; overflow:visible; }
     .intro-l img {
       /* device-hero.png has its studio backdrop removed (transparent
-         PNG) — the drop-shadow now traces the object's own silhouette
-         instead of a rectangular box, which reads far more natural. */
-      width:100%; max-height:84vh; object-fit:contain;
+         PNG) and is tightly cropped to the object itself, so nearly
+         all of this box is now the object rather than empty margin —
+         the drop-shadow traces its own silhouette, not a rectangle. */
+      width:100%; max-height:92vh; object-fit:contain;
+      transform:translateY(10%);
       filter:drop-shadow(0 28px 56px rgba(0,0,0,0.16));
     }
     .intro-r { flex:1; }
@@ -1185,7 +1187,13 @@ function setToneLevel(amp){
    proportional to its frequency. */
 let wavePhase = 0, lastCx = 0, lastT = 0;
 function heroAmp(){
-  const flattenEnd = heroW * 0.52;
+  /* The title sits at 206vw (fixed, see .wave-title) and first
+     enters the viewport once cx reaches roughly vpW-away from that
+     (~106vw on a 100vw-wide viewport). Flattening at 20% of the
+     420vw hero (84vw) finishes well before that point, so the wave
+     — and the tone — are silent by the time the title is on screen,
+     not still mid-decay. */
+  const flattenEnd = heroW * 0.20;
   return clamp(1 - cx/flattenEnd, 0, 1);
 }
 function heroFade(){
