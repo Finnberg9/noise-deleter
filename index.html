@@ -252,26 +252,28 @@
     /* ═════════════════════════════════════════════════
        1. INTRO / STATS  (120vw)
     ═════════════════════════════════════════════════ */
-    .s-intro { width:120vw; align-items:center; }
-    .intro-in { display:flex; width:100%; padding:0 8vw; gap:6vw; align-items:center; }
-    .intro-l { flex:1.9; display:flex; align-items:center; overflow:visible; }
+    /* 100vw, not 120vw — a flex row can't exceed one viewport's width
+       and still be fully visible in a single frame while scrolling
+       through it; at 120vw the right column always bled off-screen. */
+    .s-intro { width:100vw; align-items:center; }
+    .intro-in { display:flex; width:100%; padding:0 4vw; gap:3vw; align-items:center; }
+    .intro-l { flex:3; display:flex; align-items:center; overflow:visible; }
     .intro-l img {
       /* device-hero.png has its studio backdrop removed (transparent
          PNG) and is tightly cropped to the object itself, so nearly
          all of this box is now the object rather than empty margin —
          the drop-shadow traces its own silhouette, not a rectangle. */
       width:100%; max-height:92vh; object-fit:contain;
-      transform:translateY(10%);
+      transform:translateY(16%);
       filter:drop-shadow(0 28px 56px rgba(0,0,0,0.16));
     }
-    .intro-r { flex:1; }
-    .intro-r .display { font-size:clamp(2.2rem,3.6vw,3.6rem); margin-bottom:28px; }
-    .intro-r .lead { font-size:.95rem; font-weight:300; color:var(--t2); line-height:1.85; max-width:420px; margin-bottom:44px; }
-    .hero-stats { display:flex; border-top:1px solid var(--ln); padding-top:28px; }
-    .stat { flex:1; padding-right:24px; border-right:1px solid var(--ln); margin-right:24px; }
-    .stat:last-child { border-right:none; margin-right:0; padding-right:0; }
-    .stat-v { font-family:'Montserrat',sans-serif; font-size:1.6rem; font-weight:800; letter-spacing:-.02em; line-height:1; }
-    .stat-l { font-size:.63rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--t3); margin-top:5px; }
+    .intro-r { flex:1; min-width:0; }
+    .intro-r .display { font-size:clamp(1.7rem,2.6vw,2.6rem); margin-bottom:20px; }
+    .intro-r .lead { font-size:.82rem; font-weight:300; color:var(--t2); line-height:1.75; margin-bottom:32px; }
+    .hero-stats { display:grid; grid-template-columns:repeat(2,1fr); gap:18px 16px; border-top:1px solid var(--ln); padding-top:22px; }
+    .stat { padding-right:12px; }
+    .stat-v { font-family:'Montserrat',sans-serif; font-size:1.3rem; font-weight:800; letter-spacing:-.02em; line-height:1; }
+    .stat-l { font-size:.6rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--t3); margin-top:5px; }
 
     /* ═════════════════════════════════════════════════
        2. PROBLEM  (160vw)
@@ -279,15 +281,26 @@
     .s-problem { width:160vw; background:linear-gradient(90deg, var(--w) 0%, var(--w1) 35%, var(--w1) 65%, var(--w) 100%); }
     .prob-l {
       flex:1; display:flex; flex-direction:column; justify-content:center;
-      padding:72px 64px 72px 8vw;
+      padding:72px 24px 72px 8vw;
       position:relative; z-index:2;
     }
+    /* Decorative floating illustrations, anchored to the empty
+       right-hand margin of .prob-l (the text column caps at 440px,
+       so this space is clear on any real viewport) — kept out of
+       the vertically-centered text block entirely rather than
+       guessing a gap around it, so it can't collide with copy. */
+    .prob-float {
+      position:absolute; z-index:1; pointer-events:none;
+      opacity:.9; filter:drop-shadow(0 14px 26px rgba(0,0,0,0.12));
+    }
+    .pf-1 { width:15vw; max-width:210px; min-width:110px; right:4vw; top:9%; }
+    .pf-2 { width:10.5vw; max-width:150px; min-width:80px; right:10vw; bottom:8%; }
     .big-q { font-size:clamp(2.4rem,4.2vw,4.2rem); margin-bottom:32px; }
     .big-q .dim2 { color:var(--t3); }
     .prob-body { font-size:.9rem; font-weight:300; color:var(--t2); line-height:1.85; max-width:440px; }
     .prob-r {
       flex:0 0 34%; display:flex; flex-direction:column; justify-content:center;
-      padding:72px 52px 72px 48px; gap:14px; position:relative; z-index:2;
+      padding:72px 52px 72px 20px; gap:14px; position:relative; z-index:2;
     }
     /* Frosted glass card, consistent with .spec-row / .ack-item.
        No per-card parallax here (that caused the staircase drift) —
@@ -402,13 +415,22 @@
     .spec-row p  { font-size:.76rem; color:var(--t2); line-height:1.65; font-weight:300; }
     .des-imgs {
       flex:1; display:flex; align-items:center; justify-content:center;
-      gap:16vw; padding:0 8vw; position:relative; z-index:2;
+      gap:10vw; padding:0 6vw; position:relative; z-index:2;
     }
-    .des-fig { display:flex; flex-direction:column; gap:14px; }
+    /* Small floating diagram sitting in the gap between the two
+       device figures — sized to stay clear of both. */
+    .des-wave-float {
+      width:8vw; max-width:140px; min-width:70px;
+      opacity:.92; pointer-events:none;
+      filter:drop-shadow(0 10px 20px rgba(0,0,0,0.10));
+      align-self:center;
+    }
+    .des-fig { display:flex; flex-direction:column; align-items:center; gap:14px; }
     .des-fig img {
-      width:34vw; max-height:66vh; object-fit:contain;
-      background:var(--w); border:1px solid var(--ln); border-radius:8px;
-      padding:20px; filter:drop-shadow(0 16px 32px rgba(0,0,0,0.08));
+      /* transparent PNGs, background-removed to match device-hero.png —
+         no card, no border, flush against the section background */
+      width:42vw; max-height:74vh; object-fit:contain;
+      filter:drop-shadow(0 20px 40px rgba(0,0,0,0.14));
     }
     .des-fig figcaption {
       font-size:.65rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--t3);
@@ -642,6 +664,7 @@
       <li><button data-g="2">Problem</button></li>
       <li><button data-g="3">Team</button></li>
       <li><button data-g="4">Device</button></li>
+      <li><button data-g="6">Prototype</button></li>
       <li><button data-g="7" data-target="#resContent">Results</button></li>
       <li><button data-g="9" data-target="#repContent">Report</button></li>
     </ul>
@@ -699,6 +722,8 @@
   <!-- 2. PROBLEM ─────────────────────────────────────── -->
   <div class="sec lt1 s-problem" data-sec="2" data-lbl="03 / 09">
     <div class="prob-l">
+      <img class="prob-float pf-1 px" data-spd="0.90" src="img/illus-factory.png" alt="" aria-hidden="true" />
+      <img class="prob-float pf-2 px" data-spd="1.06" src="img/illus-ears.png" alt="" aria-hidden="true" />
       <p class="eyebrow px" data-spd="0.92">Background</p>
       <div class="display big-q px" data-spd="1.05" id="bqTitle">
         <div class="cr-wrap"><span class="cr">Noise is</span></div>
@@ -853,6 +878,7 @@
         <img src="img/device-angle.png" alt="Three-quarter view of the assembled Noise Deleter enclosure" />
         <figcaption>01 &mdash; Assembled Device</figcaption>
       </figure>
+      <img class="des-wave-float px" data-spd="1.0" src="img/illus-wave-diagram.png" alt="" aria-hidden="true" />
       <figure class="des-fig px" data-spd="1.04" data-r data-r-d="2" style="margin-top:10vh;">
         <img src="img/device-topdown.png" alt="Top-down view of the enclosure, its silhouette shaped after a guitar body" />
         <figcaption>02 &mdash; Top-Down Silhouette, Guitar-Inspired</figcaption>
@@ -1028,11 +1054,6 @@
       <div class="rep-btns">
         <a href="final-report.pdf" download class="btn btn-metal">Download PDF</a>
         <a href="final-report.pdf" target="_blank" class="btn btn-ghost">Open in new tab</a>
-      </div>
-      <div class="rep-thumbs">
-        <img src="img/photo-front.jpg" alt="Finished device" style="object-fit:cover;" />
-        <img src="img/photo-grass.jpg" alt="Device in the field" style="object-fit:cover;" />
-        <img src="img/photo-top.jpg"   alt="Top deck view" style="object-fit:cover;" />
       </div>
       <div class="rep-meta">Group 17 &mdash; ECE 499<br>University of Victoria<br>August 2026</div>
     </div>
