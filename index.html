@@ -421,8 +421,7 @@
     .report-pdf iframe {
       width: 100%;
       height: 72vh;
-      border: 1px solid #e8e8ed;
-      border-radius: 8px;
+      border: none;
       display: block;
     }
 
@@ -505,7 +504,7 @@
     </div>
     <div class="hero-text">
       <h1>Anti-noise,<br><span class="muted">aimed.</span></h1>
-      <p>Eight drivers act as a phased array, steering a beam of destructive interference at the listener. A feedback microphone at the listening position closes the loop, and the FxLMS algorithm adapts in real time.</p>
+      <p>Eight drivers act as a phased array, outputting a destructive waveform to cancel the existing one. A feedback microphone at the listening position closes the loop, and the FxLMS algorithm adapts in real time, ensuring constant silence.</p>
       <div class="hero-stats">
         <div><div class="stat-val">8</div><div class="stat-lbl">Speaker drivers</div></div>
         <div><div class="stat-val">15 dB</div><div class="stat-lbl">Target reduction</div></div>
@@ -518,10 +517,10 @@
 
 <section id="problem">
   <p class="eyebrow">Background</p>
-  <h2>Noise is a public health problem.</h2>
+  <h2>Noise is a public health concern.</h2>
   <div class="two-col">
     <div>
-      <p>Noise pollution in professional settings negatively affects quality of life for people with sensory processing conditions, and causes irreversible hearing damage to workers in construction, industrial, and generator environments.<br><br>Passive barriers fail at low frequencies. Consumer headphones protect only one listener. The Noise Deleter bridges the gap: commodity hardware, self-contained, under 10 W.</p>
+      <p>Noise pollution in professional and public environments reduces quality of life for people with sensory processing conditions and can cause permanent hearing damage for workers in construction, industrial facilities, and generator environments. Existing solutions have significant limitations. Passive barriers are ineffective against low-frequency noise, while consumer ANC headphones only protect a single listener and are impractical in many workplaces.<br><br>The Noise Deleter addresses this gap with a self-contained active noise cancellation system that creates a localized quiet zone using spatial sound cancellation. Built from commodity hardware and operating on less than 10 W of power, it provides targeted noise reduction without requiring users to wear headphones or modify the surrounding environment. Its modular design makes it suitable for construction sites, industrial facilities, care environments, and other applications where localized noise suppression can improve safety, comfort, and accessibility.</p>
     </div>
     <div class="cards">
       <div class="card">
@@ -533,8 +532,8 @@
         <p>Workers at construction and industrial sites are exposed to noise exceeding safe thresholds, causing permanent loss.</p>
       </div>
       <div class="card">
-        <h3>EGBC Code of Ethics &mdash; Guideline 1</h3>
-        <p>Hold paramount the safety, health, and welfare of the public and the promotion of health and safety in the workplace.</p>
+        <h3>Outdoor Events and Music Festivals</h3>
+        <p>Events with loud outdoor music and amusement rides often disturb neighboring residents.</p>
       </div>
       <div class="card">
         <h3>No Practical Middle Ground</h3>
@@ -565,7 +564,7 @@
       <div class="sys">HW / FW / SW &mdash; TDM Output, System Integration, Parameter Tuning</div>
     </div>
     <div class="team-member">
-      <div class="role">Design Engineer Lead</div>
+      <div class="role">Design Lead</div>
       <div class="name">Finn Berg</div>
       <div class="sys">Enclosures &mdash; CAD Design, 3D Printing, Speaker Array Mounting</div>
     </div>
@@ -583,11 +582,11 @@
 </section>
 
 <section id="device">
-  <p class="eyebrow">360&deg; Views</p>
+  <p class="eyebrow">Interactive Views</p>
   <h2>The Device</h2>
   <div class="viewers">
     <div class="viewer-wrap">
-      <p class="viewer-label">360&deg; View</p>
+      <p class="viewer-label">Assembled View</p>
       <iframe src="turntable.html" title="360-degree interactive view" scrolling="no"></iframe>
     </div>
     <div class="viewer-wrap">
@@ -602,12 +601,12 @@
   <h2>System Architecture</h2>
   <div class="two-col">
     <div>
-      <p>Four interdependent subsystems &mdash; software, hardware, firmware, and enclosure &mdash; designed and validated independently before closed-loop integration. Viewed from above, the enclosure's silhouette is shaped after the curved body of a guitar.</p>
+      <p>The Noise Deleter consists of four integrated subsystems: acoustic sensing, digital signal processing, hardware control, and acoustic output. Environmental noise is captured using digital I²S MEMS microphones, providing feedback signals to the ESP32-S3 microcontroller, which executes the FxLMS adaptive noise cancellation algorithm in real time. The calculated anti-noise signals are transmitted through an I²S/TDM audio interface to eight independent Class-D amplifier channels, driving a phased speaker array to create destructive interference at the target listening position.<br><br>The system integrates power regulation, processing, audio interfaces, and speaker connections onto a custom PCB within a compact enclosure. The enclosure maintains precise speaker spacing to produce a directional acoustic beam while supporting microphone placement and internal electronics. Together, these subsystems form a closed-loop active noise cancellation system capable of adapting to measured acoustic conditions and reducing targeted noise levels.</p>
     </div>
     <div class="spec-list">
       <div class="spec-item">
         <h3>Eight-Driver Speaker Array</h3>
-        <p>Eight Dayton Audio CE32A-4 drivers (32 mm) spaced 4.3 cm apart. At 2 kHz the array is ~1.5 wavelengths long, producing a beam half-power width of approximately 34 degrees.</p>
+        <p>Eight K36WP Drivers (36 mm) spaced 43 mm apart. At 2 kHz the array is ~1.5 wavelengths long, producing a beam half-power width of approximately 34 degrees.</p>
       </div>
       <div class="spec-item">
         <h3>FxLMS Adaptive Controller</h3>
@@ -642,7 +641,7 @@
 <section id="prototype">
   <p class="eyebrow">The Prototype</p>
   <h2>Built, for real.</h2>
-  <p>From CAD to bench to the field &mdash; the finished device, its 3D-printed enclosure, and the wiring that brought it to life.</p>
+  <p>From digital design to physical prototype, this process captures the complete development journey of the Noise Deleter. Beginning with CAD modeling and enclosure design, the system progressed through fabrication, electronics integration, and bench testing before becoming a fully assembled prototype. The final device combines a custom 3D-printed enclosure, integrated PCB, speaker array, and carefully routed wiring to transform the initial concept into a functional active noise cancellation system.</p>
   <div class="photo-grid">
     <figure>
       <img src="img/photo-breadboard.jpg" alt="Early breadboard prototype" />
@@ -651,6 +650,10 @@
     <figure>
       <img src="img/photo-pcb.jpg" alt="Custom PCB v1" />
       <figcaption>Custom PCB, v1</figcaption>
+    </figure>
+    <figure>
+      <img src="img/photo-cad.png" alt="CAD drawing with dimensions" />
+      <figcaption>CAD drawing</figcaption>
     </figure>
     <figure>
       <img src="img/photo-build.jpg" alt="Assembly and integration" />
@@ -677,7 +680,7 @@
 
 <section id="results">
   <p class="eyebrow">Results &amp; Findings</p>
-  <h2>What We Built</h2>
+  <h2>What We Acheived</h2>
   <p style="margin-bottom: 40px;">Four staged milestones, ten validation tests, and a working adaptive canceller.</p>
   <div class="two-col">
     <div>
@@ -715,25 +718,6 @@
           </div>
         </div>
       </div>
-      <div class="info-box">
-        <h4>Key Findings</h4>
-        <ul>
-          <li>Secondary-path phase accuracy is critical &mdash; errors beyond ~90&deg; cause divergence</li>
-          <li>I&sup2;S constraints limited design to one reference + one error microphone</li>
-          <li>System autonomously recovered from instability via divergence detection</li>
-          <li>Acoustic reflections and coupling were the primary performance ceiling</li>
-        </ul>
-      </div>
-      <div class="info-box">
-        <h4>Future Improvements</h4>
-        <ul>
-          <li>Automatic frequency estimation &mdash; remove fixed 2 kHz assumption</li>
-          <li>Multi-tone simultaneous cancellation via concurrent adaptive filters</li>
-          <li>TDM-capable microphones for additional spatial error sensors</li>
-          <li>On-device secondary-path measurement to eliminate calibration errors</li>
-          <li>Adaptive beam steering to follow listener position in real time</li>
-        </ul>
-      </div>
     </div>
     <div>
       <table>
@@ -753,6 +737,27 @@
           <tr><td>15 dB target</td><td>Full objective</td><td class="partial">Partial</td></tr>
         </tbody>
       </table>
+    </div>
+  </div>
+  <div class="two-col" style="margin-top: 24px;">
+    <div class="info-box" style="margin-top: 0;">
+      <h4>Key Findings</h4>
+      <ul>
+        <li>Secondary-path phase accuracy is critical &mdash; errors beyond ~90&deg; cause divergence</li>
+        <li>I&sup2;S constraints limited design to one reference + one error microphone</li>
+        <li>System autonomously recovered from instability via divergence detection</li>
+        <li>Acoustic reflections and coupling were the primary performance ceiling</li>
+      </ul>
+    </div>
+    <div class="info-box" style="margin-top: 0;">
+      <h4>Future Improvements</h4>
+      <ul>
+        <li>Automatic frequency estimation &mdash; remove fixed 2 kHz assumption</li>
+        <li>Multi-tone simultaneous cancellation via concurrent adaptive filters</li>
+        <li>TDM-capable microphones for additional spatial error sensors</li>
+        <li>On-device secondary-path measurement to eliminate calibration errors</li>
+        <li>Adaptive beam steering to follow listener position in real time</li>
+      </ul>
     </div>
   </div>
 </section>
@@ -840,5 +845,24 @@
   </div>
 </footer>
 
+<script>
+  document.querySelectorAll('.viewer-wrap iframe').forEach(function(f) {
+    f.addEventListener('load', function() {
+      try {
+        var d = f.contentDocument, b = d.body;
+        b.style.margin = '0';
+        b.style.overflow = 'hidden';
+        var c = d.getElementById('viewer-container');
+        if (!c) return;
+        var scaleX = f.clientWidth / c.scrollWidth;
+        var scaleY = f.clientHeight / c.scrollHeight;
+        var s = Math.min(scaleX, scaleY, 1);
+        c.style.transformOrigin = 'top center';
+        c.style.transform = 'scale(' + s + ')';
+        b.style.textAlign = 'center';
+      } catch(e) {}
+    });
+  });
+</script>
 </body>
 </html>
