@@ -284,17 +284,24 @@
       padding:72px 24px 72px 8vw;
       position:relative; z-index:2;
     }
-    /* Decorative floating illustrations, anchored to the empty
-       right-hand margin of .prob-l (the text column caps at 440px,
-       so this space is clear on any real viewport) — kept out of
-       the vertically-centered text block entirely rather than
-       guessing a gap around it, so it can't collide with copy. */
-    .prob-float {
+    /* Decorative floating illustrations, stacked and anchored a fixed
+       distance past the text's own right edge (padding-left 8vw +
+       .prob-body's 440px max-width) — tied directly to the text's
+       position so they always land in the same frame as the copy,
+       rather than to .prob-l's own far edge which can sit far off
+       to the right of the text in a 160vw-wide scrolling section.
+       No parallax on these — independent drift is what caused the
+       staircase/collision bugs on the .issue cards previously. */
+    .prob-floats {
       position:absolute; z-index:1; pointer-events:none;
-      opacity:.9; filter:drop-shadow(0 14px 26px rgba(0,0,0,0.12));
+      left:calc(8vw + 466px); top:50%; transform:translateY(-50%);
+      display:flex; flex-direction:column; align-items:center; gap:26px;
     }
-    .pf-1 { width:15vw; max-width:210px; min-width:110px; right:4vw; top:9%; }
-    .pf-2 { width:10.5vw; max-width:150px; min-width:80px; right:10vw; bottom:8%; }
+    .prob-floats img {
+      width:clamp(260px, 22vw, 400px);
+      opacity:.95;
+      filter:drop-shadow(0 18px 34px rgba(0,0,0,0.14));
+    }
     .big-q { font-size:clamp(2.4rem,4.2vw,4.2rem); margin-bottom:32px; }
     .big-q .dim2 { color:var(--t3); }
     .prob-body { font-size:.9rem; font-weight:300; color:var(--t2); line-height:1.85; max-width:440px; }
@@ -417,13 +424,12 @@
       flex:1; display:flex; align-items:center; justify-content:center;
       gap:10vw; padding:0 6vw; position:relative; z-index:2;
     }
-    /* Small floating diagram sitting in the gap between the two
-       device figures — sized to stay clear of both. */
+    /* Wave diagram sits below the design paragraph in the text column */
     .des-wave-float {
-      width:8vw; max-width:140px; min-width:70px;
+      width:20vw; max-width:350px; min-width:175px;
       opacity:.92; pointer-events:none;
       filter:drop-shadow(0 10px 20px rgba(0,0,0,0.10));
-      align-self:center;
+      margin-top:28px;
     }
     .des-fig { display:flex; flex-direction:column; align-items:center; gap:14px; }
     .des-fig img {
@@ -664,6 +670,7 @@
       <li><button data-g="2">Problem</button></li>
       <li><button data-g="3">Team</button></li>
       <li><button data-g="4">Device</button></li>
+      <li><button data-g="5">Design</button></li>
       <li><button data-g="6">Prototype</button></li>
       <li><button data-g="7" data-target="#resContent">Results</button></li>
       <li><button data-g="9" data-target="#repContent">Report</button></li>
@@ -722,8 +729,10 @@
   <!-- 2. PROBLEM ─────────────────────────────────────── -->
   <div class="sec lt1 s-problem" data-sec="2" data-lbl="03 / 09">
     <div class="prob-l">
-      <img class="prob-float pf-1 px" data-spd="0.90" src="img/illus-factory.png" alt="" aria-hidden="true" />
-      <img class="prob-float pf-2 px" data-spd="1.06" src="img/illus-ears.png" alt="" aria-hidden="true" />
+      <div class="prob-floats">
+        <img src="img/illus-factory.png" alt="" aria-hidden="true" />
+        <img src="img/illus-ears.png" alt="" aria-hidden="true" />
+      </div>
       <p class="eyebrow px" data-spd="0.92">Background</p>
       <div class="display big-q px" data-spd="1.05" id="bqTitle">
         <div class="cr-wrap"><span class="cr">Noise is</span></div>
@@ -850,6 +859,7 @@
         from above, the enclosure's silhouette is intentionally shaped after the
         curved body of a guitar.
       </p>
+      <img class="des-wave-float" src="img/illus-wave-diagram.png" alt="" aria-hidden="true" />
     </div>
     <div class="des-specs">
       <div class="spec-row" data-r>
@@ -878,7 +888,6 @@
         <img src="img/device-angle.png" alt="Three-quarter view of the assembled Noise Deleter enclosure" />
         <figcaption>01 &mdash; Assembled Device</figcaption>
       </figure>
-      <img class="des-wave-float px" data-spd="1.0" src="img/illus-wave-diagram.png" alt="" aria-hidden="true" />
       <figure class="des-fig px" data-spd="1.04" data-r data-r-d="2" style="margin-top:10vh;">
         <img src="img/device-topdown.png" alt="Top-down view of the enclosure, its silhouette shaped after a guitar body" />
         <figcaption>02 &mdash; Top-Down Silhouette, Guitar-Inspired</figcaption>
